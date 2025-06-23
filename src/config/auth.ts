@@ -9,10 +9,10 @@ export const authConfig = {
     id: 'dev-user-123',
     username: 'developer',
     email: 'dev@example.com',
-    roles: ['user', 'admin'],
+    roles: ['user', 'admin'] as string[],
     farmerId: 'farm-123',
   },
-} as const;
+};
 
 export const isAuthEnabled = authConfig.mode === 'keycloak';
 export const isMockAuth = authConfig.mode === 'mock';
