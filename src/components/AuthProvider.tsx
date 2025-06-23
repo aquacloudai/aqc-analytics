@@ -1,37 +1,37 @@
 import { useEffect, type ReactNode } from 'react';
-import keycloak from '../config/keycloak';
 import { useAuthStore } from '../store/authStore';
+import keycloak, { initKeycloak } from '../services/keycloakService';
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { setUser, setIsAuthenticated, setIsLoading } = useAuthStore();
+  const { setUser, setIsAuthenticated, setIsLoading, setKeycloakReady } = useAuthStore();
+
 
   useEffect(() => {
-    const initKeycloak = async () => {
+    const start = async () => {
       try {
-        const authenticated = await keycloak.init({
-          onLoad: 'login-required',
-          checkLoginIframe: false,
-        });
+        const authenticated = await initKeycloak();
 
-        if (authenticated) {
-          setIsAuthenticated(true);
-          
-          // Load user profile
-          const profile = await keycloak.loadUserProfile();
-          const tokenParsed = keycloak.tokenParsed as any;
-          
-          setUser({
-            id: profile.id || tokenParsed.sub,
-            username: profile.username || '',
-            email: profile.email || '',
-            roles: tokenParsed.realm_access?.roles || [],
-            farmerId: tokenParsed.farmer_id,
-          });
-        }
+          if (authenticated) {
+            setIsAuthenticated(true);
+
+            const profile = await keycloak.loadUserProfile();
+            const tokenParsed = keycloak.tokenParsed as any;
+
+            setUser({
+              id: profile.id || tokenParsed.sub,
+              username: profile.username || '',
+              email: profile.email || '',
+              roles: tokenParsed.realm_access?.roles || [],
+              farmerId: tokenParsed.farmer_id,
+            });
+
+            setKeycloakReady(true); // ✅ this is now the official flag
+          }
+
       } catch (error) {
         console.error('Keycloak initialization failed:', error);
       } finally {
@@ -39,17 +39,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    initKeycloak();
+    start();
 
-    // Token refresh
-    const tokenRefreshInterval = setInterval(() => {
+    const interval = setInterval(() => {
       keycloak.updateToken(70).catch(() => {
         console.error('Failed to refresh token');
         keycloak.login();
       });
-    }, 60000); // Check every minute
+    }, 60000);
 
-    return () => clearInterval(tokenRefreshInterval);
+    return () => clearInterval(interval);
   }, [setUser, setIsAuthenticated, setIsLoading]);
 
   const isLoading = useAuthStore((state) => state.isLoading);

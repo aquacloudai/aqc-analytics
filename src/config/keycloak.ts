@@ -1,11 +1,25 @@
 import Keycloak from 'keycloak-js';
 
-const keycloakConfig = {
-  url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080',
-  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'aqc-realm',
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'aqc-analytics',
-};
+const keycloak = new Keycloak({
+  url: import.meta.env.VITE_KEYCLOAK_URL,
+  realm: import.meta.env.VITE_KEYCLOAK_REALM,
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
+});
 
-const keycloak = new Keycloak(keycloakConfig);
+let keycloakReady = false;
+
+export const initKeycloak = async (): Promise<boolean> => {
+  const authenticated = await keycloak.init({
+    onLoad: 'login-required',
+    checkLoginIframe: false,
+    pkceMethod: 'S256',
+  });
+
+  if (authenticated && keycloak.token) {
+    keycloakReady = true;
+  }
+
+  return authenticated;
+};
 
 export default keycloak;

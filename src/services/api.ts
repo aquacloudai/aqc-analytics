@@ -1,50 +1,85 @@
-import axios from 'axios';
+import axios, {
+  type AxiosInstance,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from 'axios';
 import keycloak from '../config/keycloak';
-import { isAuthEnabled } from '../config/auth';
+import { useAuthStore } from '../store/authStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || 'https://apee.aquacloud.ai';
 
-const api = axios.create({
+const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    if (isAuthEnabled && keycloak.token) {
-      config.headers.Authorization = `Bearer ${keycloak.token}`;
+// Ensure token is valid before request
+async function ensureToken(): Promise<void> {
+  const { isAuthenticated, isLoading } = useAuthStore.getState();
+
+  console.log('[ensureToken] isAuthenticated:', isAuthenticated);
+  console.log('[ensureToken] isLoading:', isLoading);
+  console.log('[ensureToken] token:', keycloak.token);
+
+  if (isLoading) {
+    throw new Error('Auth is still initializing. Wait before making API requests.');
+  }
+
+  if (!isAuthenticated || !keycloak.token) {
+    throw new Error('User not authenticated or token not available.');
+  }
+
+  try {
+    const refreshed = await keycloak.updateToken(30);
+    if (refreshed) {
+      console.log('[ensureToken] Token refreshed');
     }
+  } catch (err) {
+    console.error('[ensureToken] Token refresh failed:', err);
+    keycloak.login();
+    throw err;
+  }
+}
+
+// Attach token to request
+api.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
+    await ensureToken();
+
+    if (keycloak.token && config.headers) {
+      config.headers.Authorization = `Bearer ${keycloak.token}`;
+      console.log('[interceptor] Attached token to request');
+    }
+
     return config;
   },
   (error) => {
+    console.error('[interceptor] Request error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor to handle token refresh
+// Retry once on 401
 api.interceptors.response.use(
-  (response) => response,
+  (response: AxiosResponse): AxiosResponse => response,
   async (error) => {
-    // Only handle authentication errors when auth is enabled
-    if (!isAuthEnabled) {
-      return Promise.reject(error);
-    }
-
-    const originalRequest = error.config;
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        await keycloak.updateToken(30);
-        originalRequest.headers.Authorization = `Bearer ${keycloak.token}`;
+        await keycloak.updateToken(0); // force refresh
+        if (keycloak.token && originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${keycloak.token}`;
+        }
         return api(originalRequest);
-      } catch (refreshError) {
+      } catch (err) {
+        console.error('[interceptor] Retry failed. Redirecting to login.');
         keycloak.login();
-        return Promise.reject(refreshError);
+        return Promise.reject(err);
       }
     }
 
