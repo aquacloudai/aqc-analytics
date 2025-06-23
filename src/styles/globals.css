@@ -1,0 +1,13 @@
+/* Global styles for AQC Analytics */
+
+:root {
+  --aqua-primary: #014059;
+  --aqua-secondary: #90d0d7;
+  --aqua-dark: #081a26;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Inter, system-ui, sans-serif;
+}
