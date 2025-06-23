@@ -57,7 +57,7 @@ export function Analytics() {
           />
           <SegmentedControl
             value={aggregationLevel}
-            onChange={(value) => setAggregationLevel(value as any)}
+            onChange={(value) => setAggregationLevel(value as 'daily' | 'weekly' | 'monthly')}
             data={[
               { label: 'Daily', value: 'daily' },
               { label: 'Weekly', value: 'weekly' },

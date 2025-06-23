@@ -13,18 +13,7 @@ import {
   ScrollArea,
   Flex
 } from '@mantine/core';
-import { 
-  LineChart, 
-  Line, 
-  BarChart,
-  Bar,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Legend 
-} from 'recharts';
+import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 export function Dashboard() {
@@ -232,32 +221,108 @@ export function Dashboard() {
                   <Badge size="xs" variant="outline">ON</Badge>
                 </Group>
               </Group>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={historyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colorScheme === 'dark' ? '#90d0d7' : '#e9ecef'} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke={colorScheme === 'dark' ? '#90d0d7' : '#495057'}
-                    fontSize={12}
-                  />
-                  <YAxis 
-                    stroke={colorScheme === 'dark' ? '#90d0d7' : '#495057'}
-                    fontSize={12}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: colorScheme === 'dark' ? '#014059' : '#ffffff',
-                      border: '1px solid #90d0d7',
-                      borderRadius: '4px'
-                    }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="Mid" stroke="#228be6" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="North" stroke="#fa5252" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Norway" stroke="#40c057" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="South" stroke="#fd7e14" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              <ReactECharts
+                option={{
+                  backgroundColor: 'transparent',
+                  grid: {
+                    left: 60,
+                    right: 30,
+                    top: 30,
+                    bottom: 60
+                  },
+                  xAxis: {
+                    type: 'category',
+                    data: historyData.map(item => item.date),
+                    axisLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisTick: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisLabel: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
+                      fontSize: 12
+                    }
+                  },
+                  yAxis: {
+                    type: 'value',
+                    axisLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisTick: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisLabel: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
+                      fontSize: 12
+                    },
+                    splitLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#e9ecef',
+                        type: 'dashed'
+                      }
+                    }
+                  },
+                  tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: colorScheme === 'dark' ? '#014059' : '#ffffff',
+                    borderColor: '#90d0d7',
+                    borderWidth: 1,
+                    textStyle: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                    }
+                  },
+                  legend: {
+                    data: ['Mid', 'North', 'Norway', 'South'],
+                    textStyle: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                    }
+                  },
+                  series: [
+                    {
+                      name: 'Mid',
+                      type: 'line',
+                      data: historyData.map(item => item.Mid),
+                      lineStyle: { color: '#228be6', width: 2 },
+                      itemStyle: { color: '#228be6' },
+                      symbol: 'none'
+                    },
+                    {
+                      name: 'North',
+                      type: 'line',
+                      data: historyData.map(item => item.North),
+                      lineStyle: { color: '#fa5252', width: 2 },
+                      itemStyle: { color: '#fa5252' },
+                      symbol: 'none'
+                    },
+                    {
+                      name: 'Norway',
+                      type: 'line',
+                      data: historyData.map(item => item.Norway),
+                      lineStyle: { color: '#40c057', width: 2 },
+                      itemStyle: { color: '#40c057' },
+                      symbol: 'none'
+                    },
+                    {
+                      name: 'South',
+                      type: 'line',
+                      data: historyData.map(item => item.South),
+                      lineStyle: { color: '#fd7e14', width: 2 },
+                      itemStyle: { color: '#fd7e14' },
+                      symbol: 'none'
+                    }
+                  ]
+                }}
+                style={{ height: '300px', width: '100%' }}
+              />
             </Paper>
           </Stack>
         </Grid.Col>
@@ -268,62 +333,185 @@ export function Dashboard() {
             {/* Biomass Development */}
             <Paper p="md" radius="md" withBorder>
               <Title order={4} mb="md">Biomass development per month</Title>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={biomassData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colorScheme === 'dark' ? '#90d0d7' : '#e9ecef'} />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke={colorScheme === 'dark' ? '#90d0d7' : '#495057'}
-                    fontSize={10}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis 
-                    stroke={colorScheme === 'dark' ? '#90d0d7' : '#495057'}
-                    fontSize={12}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: colorScheme === 'dark' ? '#014059' : '#ffffff',
-                      border: '1px solid #90d0d7',
-                      borderRadius: '4px'
-                    }}
-                  />
-                  <Bar dataKey="value" fill="#90d0d7" />
-                </BarChart>
-              </ResponsiveContainer>
+              <ReactECharts
+                option={{
+                  backgroundColor: 'transparent',
+                  grid: {
+                    left: 60,
+                    right: 30,
+                    top: 30,
+                    bottom: 80
+                  },
+                  xAxis: {
+                    type: 'category',
+                    data: biomassData.map(item => item.month),
+                    axisLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisTick: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisLabel: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
+                      fontSize: 10,
+                      rotate: -45
+                    }
+                  },
+                  yAxis: {
+                    type: 'value',
+                    axisLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisTick: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisLabel: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
+                      fontSize: 12
+                    },
+                    splitLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#e9ecef',
+                        type: 'dashed'
+                      }
+                    }
+                  },
+                  tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: colorScheme === 'dark' ? '#014059' : '#ffffff',
+                    borderColor: '#90d0d7',
+                    borderWidth: 1,
+                    textStyle: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                    }
+                  },
+                  series: [
+                    {
+                      type: 'bar',
+                      data: biomassData.map(item => item.value),
+                      itemStyle: {
+                        color: '#90d0d7'
+                      }
+                    }
+                  ]
+                }}
+                style={{ height: '200px', width: '100%' }}
+              />
             </Paper>
 
             {/* Temperature Development */}
             <Paper p="md" radius="md" withBorder>
               <Title order={4} mb="md">Temperature development last 12 months</Title>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={tempData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colorScheme === 'dark' ? '#90d0d7' : '#e9ecef'} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke={colorScheme === 'dark' ? '#90d0d7' : '#495057'}
-                    fontSize={10}
-                  />
-                  <YAxis 
-                    stroke={colorScheme === 'dark' ? '#90d0d7' : '#495057'}
-                    fontSize={12}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: colorScheme === 'dark' ? '#014059' : '#ffffff',
-                      border: '1px solid #90d0d7',
-                      borderRadius: '4px'
-                    }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="Mid" stroke="#228be6" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="North" stroke="#fa5252" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Norway" stroke="#40c057" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="South" stroke="#fd7e14" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              <ReactECharts
+                option={{
+                  backgroundColor: 'transparent',
+                  grid: {
+                    left: 60,
+                    right: 30,
+                    top: 30,
+                    bottom: 60
+                  },
+                  xAxis: {
+                    type: 'category',
+                    data: tempData.map(item => item.date),
+                    axisLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisTick: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisLabel: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
+                      fontSize: 10
+                    }
+                  },
+                  yAxis: {
+                    type: 'value',
+                    axisLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisTick: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                      }
+                    },
+                    axisLabel: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
+                      fontSize: 12
+                    },
+                    splitLine: {
+                      lineStyle: {
+                        color: colorScheme === 'dark' ? '#90d0d7' : '#e9ecef',
+                        type: 'dashed'
+                      }
+                    }
+                  },
+                  tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: colorScheme === 'dark' ? '#014059' : '#ffffff',
+                    borderColor: '#90d0d7',
+                    borderWidth: 1,
+                    textStyle: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                    }
+                  },
+                  legend: {
+                    data: ['Mid', 'North', 'Norway', 'South'],
+                    textStyle: {
+                      color: colorScheme === 'dark' ? '#90d0d7' : '#495057'
+                    }
+                  },
+                  series: [
+                    {
+                      name: 'Mid',
+                      type: 'line',
+                      data: tempData.map(item => item.Mid),
+                      lineStyle: { color: '#228be6', width: 2 },
+                      itemStyle: { color: '#228be6' },
+                      symbol: 'none'
+                    },
+                    {
+                      name: 'North',
+                      type: 'line',
+                      data: tempData.map(item => item.North),
+                      lineStyle: { color: '#fa5252', width: 2 },
+                      itemStyle: { color: '#fa5252' },
+                      symbol: 'none'
+                    },
+                    {
+                      name: 'Norway',
+                      type: 'line',
+                      data: tempData.map(item => item.Norway),
+                      lineStyle: { color: '#40c057', width: 2 },
+                      itemStyle: { color: '#40c057' },
+                      symbol: 'none'
+                    },
+                    {
+                      name: 'South',
+                      type: 'line',
+                      data: tempData.map(item => item.South),
+                      lineStyle: { color: '#fd7e14', width: 2 },
+                      itemStyle: { color: '#fd7e14' },
+                      symbol: 'none'
+                    }
+                  ]
+                }}
+                style={{ height: '200px', width: '100%' }}
+              />
             </Paper>
           </Stack>
         </Grid.Col>
