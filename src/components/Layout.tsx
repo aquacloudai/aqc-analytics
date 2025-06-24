@@ -10,7 +10,8 @@ import {
   IconSettings,
   IconLogout,
   IconUser,
-  IconFilter
+  IconFilter,
+  IconTemperature
 } from '@tabler/icons-react';
 
 export function Layout() {
@@ -21,6 +22,7 @@ export function Layout() {
   const navigation = [
     { path: '/', label: 'Dashboard', icon: IconDashboard },
     { path: '/analytics', label: 'Analytics', icon: IconChartBar },
+    { path: '/temperature', label: 'Temperature', icon: IconTemperature },
     { path: '/map', label: 'Farm Map', icon: IconMap },
     { path: '/reports', label: 'Reports', icon: IconReport },
     { path: '/filters', label: 'Data Filters', icon: IconFilter },
