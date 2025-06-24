@@ -7,19 +7,26 @@ const keycloak = new Keycloak({
 });
 
 let keycloakReady = false;
+let initPromise: Promise<boolean> | null = null;
 
 export const initKeycloak = async (): Promise<boolean> => {
-  const authenticated = await keycloak.init({
+  if (keycloakReady) return true; // ✅ already initialized
+  if (initPromise) return initPromise; // ✅ currently initializing
+
+  initPromise = keycloak.init({
     onLoad: 'login-required',
     checkLoginIframe: false,
     pkceMethod: 'S256',
+  }).then(authenticated => {
+    if (authenticated && keycloak.token) {
+      keycloakReady = true;
+    }
+    return authenticated;
   });
 
-  if (authenticated && keycloak.token) {
-    keycloakReady = true;
-  }
-
-  return authenticated;
+  return initPromise;
 };
+
+export const isKeycloakReady = (): boolean => keycloakReady;
 
 export default keycloak;
