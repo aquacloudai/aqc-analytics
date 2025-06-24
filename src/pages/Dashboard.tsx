@@ -15,12 +15,15 @@ import type { AquacloudFdirBiomassPerMonth } from '../types/aquacloud_fdir_bioma
 
 import { FarmersInAquaCloudTable } from '../components/FarmersInAquaCloudTable';
 import { BiomassComparisonChart } from '../components/BiomassComparisonChart';
+import { LossByRegionOverview } from '../components/LossByRegionContainer';
+import type { LossByRegionRecord } from '../types/loss_by_region';
 
 
 export function Dashboard() {
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [farmAndSiteStats, setFarmAndSiteStats] = useState<FarmAndSiteStats | null>(null);
   const [aquacloudFdirBiomassPerMonth, setAquacloudFdirBiomassPerMonth] = useState<AquacloudFdirBiomassPerMonth[]>([]);
+  const [lossByRegion, setLossByRegion] = useState<LossByRegionRecord[]>([]);
 
   useEffect(() => {
     if (!isKeycloakReady()) return; // wait until Keycloak is initialized
@@ -48,8 +51,6 @@ export function Dashboard() {
         console.error('[Dashboard] Failed to fetch farm and site stats:', error);
       }
     };
-
-
     fetchFarmAndSiteStats();
   }, [isKeycloakReady()]);
 
@@ -68,6 +69,27 @@ export function Dashboard() {
 
     fetchAquacloudFdirBiomassPerMonth();
   }, [isKeycloakReady()]);
+
+
+useEffect(() => {
+  if (!isKeycloakReady()) return;
+
+  const fetchLossByRegion = async () => {
+    try {
+      const response = await api.get<{ data: LossByRegionRecord[] }>('/v3/loss-mortality/loss-by-region'); // ✅ Correct type
+      setLossByRegion(response.data?.data || []);
+    } catch (error) {
+      console.error('[Dashboard] Failed to fetch loss by region:', error);
+    }
+  };
+
+  fetchLossByRegion();
+}, [isKeycloakReady()]);
+
+
+useEffect(() => {
+  console.log('Farmers:', farmers);
+}, [farmers]);
 
   return (
     <Stack gap="lg">
@@ -96,6 +118,8 @@ export function Dashboard() {
           </Group>
         </Flex>
       </Paper>
+
+      <LossByRegionOverview data={lossByRegion}/>
 
 
       <Grid gutter="lg">

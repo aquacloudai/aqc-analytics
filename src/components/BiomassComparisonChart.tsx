@@ -94,7 +94,7 @@ export function BiomassComparisonChart({ data }: Props) {
             },
           ],
         }}
-        style={{ height: '200px', width: '100%' }}
+        style={{ height: '400px', width: '100%' }}
       />
     </Paper>
   );
