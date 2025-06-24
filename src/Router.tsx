@@ -6,6 +6,7 @@ import { FarmMap } from './pages/FarmMap';
 import { Reports } from './pages/Reports';
 import { Filters } from './pages/Filters';
 import { Settings } from './pages/Settings';
+import { Temperature } from './pages/Temperature';
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
       {
         path: 'settings',
         element: <Settings />,
+      },
+      {
+        path: 'temperature',
+        element: <Temperature />,
       },
     ],
   },
