@@ -1,9 +1,20 @@
-import { Title, Paper } from '@mantine/core';
+import {
+  Title,
+  Paper,
+  Stack,
+  Group,
+  Badge,
+  Select,
+  SegmentedControl,
+} from '@mantine/core';
 import { MapContainer, TileLayer, Popup, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { useEffect, useState } from 'react';
+import api from '../services/api';
+import { isKeycloakReady } from '../config/keycloak';
+import type { Site } from '../types/site';
 
-// Fix for default markers in React Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -11,61 +22,139 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-export function FarmMap() {
-  // Norwegian salmon farming coordinates (example)
-  const farms = [
-    { id: 1, name: 'Northern Fjord Farm', lat: 69.6492, lng: 18.9553, biomass: 1200, pens: 12 },
-    { id: 2, name: 'Southern Bay Farm', lat: 58.9690, lng: 5.7331, biomass: 800, pens: 8 },
-    { id: 3, name: 'Western Coast Farm', lat: 62.4722, lng: 6.1549, biomass: 1500, pens: 15 },
-  ];
+const marineTypeColors: Record<string, string> = {
+  'Bølgeeksponert kyst': '#2e7d32',
+  'Moderat eksponert fjord/kyst': '#1976d2',
+  'Skjermet fjord': '#f59f00',
+  'Eksponert åpen sjø': '#d6336c',
+  'Beskyttet fjord/kyst': '#6c757d',
+  'Beskyttet ferskvannspåvirket fjord/kyst': '#adb5bd',
+};
 
-  const getColorByBiomass = (biomass: number) => {
-    if (biomass > 1200) return '#2e7d32';
-    if (biomass > 900) return '#1976d2';
-    return '#ed6c02';
-  };
+const getColorByMarineType = (typeName?: string | null) =>
+  typeName && marineTypeColors[typeName] ? marineTypeColors[typeName] : '#adb5bd';
+
+export function FarmMap() {
+  const [sites, setSites] = useState<Site[]>([]);
+  const [filteredSites, setFilteredSites] = useState<Site[]>([]);
+
+  const [selectedPlacement, setSelectedPlacement] = useState<string>('');
+  const [selectedProductionArea, setSelectedProductionArea] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isKeycloakReady()) return;
+    api
+      .get<{ data: Site[] }>('/v3/common/site')
+      .then((res) => {
+        const allSites = res.data?.data || [];
+        setSites(allSites);
+        setFilteredSites(allSites);
+      })
+      .catch((err) => console.error('[FarmMap] Failed to fetch sites:', err));
+  }, []);
+
+  // Filter logic
+  useEffect(() => {
+    let result = sites;
+
+    if (selectedPlacement && selectedPlacement !== '') {
+      result = result.filter((s) => s.placement === selectedPlacement);
+    }
+
+    if (selectedProductionArea) {
+      result = result.filter((s) => s.production_area_name === selectedProductionArea);
+    }
+
+    setFilteredSites(result);
+  }, [selectedPlacement, selectedProductionArea, sites]);
+
+  // Unique production areas for dropdown
+  const productionAreas = Array.from(
+    new Set(sites.map((s) => s.production_area_name).filter(Boolean))
+  );
 
   return (
     <div>
-      <Title order={1} mb="lg">Farm Locations</Title>
-      
-      <Paper radius="md" withBorder style={{ height: 'calc(100vh - 200px)' }}>
-        <MapContainer 
-          center={[65.0, 13.0]} 
-          zoom={5} 
-          style={{ height: '100%', width: '100%' }}
-        >
+      <Title order={3} mb="md">
+        Farm Locations
+      </Title>
+
+      <Paper radius="md" withBorder style={{ height: 'calc(100vh - 320px)' }}>
+        <MapContainer center={[65.0, 13.0]} zoom={5} style={{ height: '100%', width: '100%' }}>
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          
-          {farms.map((farm) => (
+          {filteredSites.map((site) => (
             <CircleMarker
-              key={farm.id}
-              center={[farm.lat, farm.lng]}
-              radius={Math.sqrt(farm.biomass) / 4}
+              key={site.site_id}
+              center={[site.latitude, site.longitude]}
+              radius={5}
               pathOptions={{
-                fillColor: getColorByBiomass(farm.biomass),
+                fillColor: getColorByMarineType(site.marine_type_name),
                 color: '#fff',
-                weight: 2,
+                weight: 1,
                 opacity: 1,
-                fillOpacity: 0.8,
+                fillOpacity: 0.9,
               }}
             >
               <Popup>
-                <div>
-                  <strong>{farm.name}</strong>
-                  <br />
-                  Biomass: {farm.biomass} tons
-                  <br />
-                  Pens: {farm.pens}
-                </div>
+                <Stack gap="xs">
+                  <Title order={6}>{site.site_name}</Title>
+                  {site.marine_type_name && (
+                    <div>
+                      <strong>Marine Type:</strong> {site.marine_type_name}
+                    </div>
+                  )}
+                  {site.production_area_name && (
+                    <div>
+                      <strong>Area:</strong> {site.production_area_name}
+                    </div>
+                  )}
+                  <div>
+                    <strong>AquaCloud:</strong>{' '}
+                    <Badge color={site.is_in_aquacloud ? 'green' : 'gray'}>
+                      {site.is_in_aquacloud ? 'Yes' : 'No'}
+                    </Badge>
+                  </div>
+                </Stack>
               </Popup>
             </CircleMarker>
           ))}
         </MapContainer>
       </Paper>
+
+      {/* Filters */}
+      <Group mt="md" gap="md" wrap="wrap">
+        <Select
+          label="Produksjonsområde"
+          placeholder="Velg område"
+          clearable
+          data={productionAreas.map((area) => ({ value: area, label: area }))}
+          value={selectedProductionArea}
+          onChange={setSelectedProductionArea}
+        />
+
+        <SegmentedControl
+          value={selectedPlacement}
+          onChange={setSelectedPlacement}
+          data={[
+            { label: 'Alle', value: '' },
+            { label: 'Offshore', value: 'offshore' },
+            { label: 'Onshore', value: 'onshore' },
+          ]}
+          color="blue"
+        />
+      </Group>
+
+      {/* Legend */}
+      <Group mt="md" gap="xs" wrap="wrap">
+        {Object.entries(marineTypeColors).map(([label, color]) => (
+          <Badge key={label} color={color} variant="light">
+            {label}
+          </Badge>
+        ))}
+      </Group>
     </div>
   );
 }
