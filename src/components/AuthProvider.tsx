@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { useAuthStore } from '../store/authStore';
-import keycloak, { initKeycloak } from '../services/keycloakService';
+import keycloak, { initKeycloak } from '../config/keycloak';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               farmerId: tokenParsed.farmer_id,
             });
 
-            setKeycloakReady(true); // ✅ this is now the official flag
+            setKeycloakReady(true);
           }
 
       } catch (error) {

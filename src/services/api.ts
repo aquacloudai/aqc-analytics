@@ -3,8 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import keycloak from '../config/keycloak';
-import { useAuthStore } from '../store/authStore';
+import keycloak, { isKeycloakReady } from '../config/keycloak';
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || 'https://apee.aquacloud.ai';
 
@@ -15,26 +14,17 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Ensure token is valid before request
 async function ensureToken(): Promise<void> {
-  const { isAuthenticated, isLoading } = useAuthStore.getState();
-
-  console.log('[ensureToken] isAuthenticated:', isAuthenticated);
-  console.log('[ensureToken] isLoading:', isLoading);
-  console.log('[ensureToken] token:', keycloak.token);
-
-  if (isLoading) {
-    throw new Error('Auth is still initializing. Wait before making API requests.');
-  }
-
-  if (!isAuthenticated || !keycloak.token) {
-    throw new Error('User not authenticated or token not available.');
+  if (!isKeycloakReady() || !keycloak.token) {
+    throw new Error('Keycloak not ready or token missing.');
   }
 
   try {
     const refreshed = await keycloak.updateToken(30);
     if (refreshed) {
-      console.log('[ensureToken] Token refreshed');
+      console.log('[ensureToken] Token was refreshed');
+    } else {
+      console.log('[ensureToken] Token is still valid');
     }
   } catch (err) {
     console.error('[ensureToken] Token refresh failed:', err);
@@ -43,12 +33,14 @@ async function ensureToken(): Promise<void> {
   }
 }
 
+
 // Attach token to request
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
     await ensureToken();
 
-    if (keycloak.token && config.headers) {
+    if (keycloak.token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${keycloak.token}`;
       console.log('[interceptor] Attached token to request');
     }
