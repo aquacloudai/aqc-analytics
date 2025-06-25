@@ -26,7 +26,7 @@ export function Dashboard() {
   const [lossByRegion, setLossByRegion] = useState<LossByRegionRecord[]>([]);
 
   useEffect(() => {
-    if (!isKeycloakReady()) return; // wait until Keycloak is initialized
+    if (!isKeycloakReady()) return; // wait until auth is ready
 
     const fetchFarmers = async () => {
       try {
@@ -41,7 +41,7 @@ export function Dashboard() {
   }, [isKeycloakReady()]);
 
   useEffect(() => {
-    if (!isKeycloakReady()) return; // wait until Keycloak is initialized
+    if (!isKeycloakReady()) return; // wait until auth is ready
 
     const fetchFarmAndSiteStats = async () => {
       try {
@@ -56,7 +56,7 @@ export function Dashboard() {
 
 
   useEffect(() => {
-    if (!isKeycloakReady()) return; // wait until Keycloak is initialized
+    if (!isKeycloakReady()) return; // wait until auth is ready
 
     const fetchAquacloudFdirBiomassPerMonth = async () => {
       try {
@@ -71,25 +71,25 @@ export function Dashboard() {
   }, [isKeycloakReady()]);
 
 
-useEffect(() => {
-  if (!isKeycloakReady()) return;
+  useEffect(() => {
+    if (!isKeycloakReady()) return;
 
-  const fetchLossByRegion = async () => {
-    try {
-      const response = await api.get<{ data: LossByRegionRecord[] }>('/v3/loss-mortality/loss-by-region');
-      setLossByRegion(response.data?.data || []);
-    } catch (error) {
-      console.error('[Dashboard] Failed to fetch loss by region:', error);
-    }
-  };
+    const fetchLossByRegion = async () => {
+      try {
+        const response = await api.get<{ data: LossByRegionRecord[] }>('/v3/loss-mortality/loss-by-region');
+        setLossByRegion(response.data?.data || []);
+      } catch (error) {
+        console.error('[Dashboard] Failed to fetch loss by region:', error);
+      }
+    };
 
-  fetchLossByRegion();
-}, [isKeycloakReady()]);
+    fetchLossByRegion();
+  }, [isKeycloakReady()]);
 
 
-useEffect(() => {
-  console.log('Farmers:', farmers);
-}, [farmers]);
+  useEffect(() => {
+    console.log('Farmers:', farmers);
+  }, [farmers]);
 
   return (
     <Stack gap="lg">
@@ -119,7 +119,7 @@ useEffect(() => {
         </Flex>
       </Paper>
 
-      <LossByRegionOverview data={lossByRegion}/>
+      <LossByRegionOverview data={lossByRegion} />
 
 
       <Grid gutter="lg">
