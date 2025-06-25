@@ -3,21 +3,24 @@ import {
   Paper,
   Title,
   Text,
-  Stack,
-  Checkbox,
-  ScrollArea,
   Box,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import type { ProductionArea } from '../types/production_area';
 import type { TemperatureTrendData } from '../types/temperature_trend';
 import api from '../services/api';
 import { isKeycloakReady } from '../config/keycloak';
 import { LineChart } from 'aqc-charts';
 import type { ChartSeries, LegendConfig, TooltipConfig } from 'aqc-charts';
+import { FilterSidebar } from '../components/FilterSidebar';
 
 
 export function Temperature() {
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const [productionAreas, setProducionAreas] = useState<ProductionArea[]>([]);
   const [temperatureTrendData, setTemperatureTrendData] = useState<TemperatureTrendData[]>([]);
@@ -61,14 +64,34 @@ export function Temperature() {
     );
   };
 
+  const handleDateChange = (start: Date | null, end: Date | null) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   const chartData = useMemo(() => {
     if (selectedAreas.length === 0 || temperatureTrendData.length === 0) return null;
 
     const series: ChartSeries[] = [];
     const colors = ['#FFD93D', '#6BCF7F', '#4D9DE0', '#E15554', '#F18F01'];
 
+    // Filter data by date range if dates are selected
+    let filteredData = temperatureTrendData;
+    if (startDate || endDate) {
+      filteredData = temperatureTrendData.filter(item => {
+        const itemDate = new Date(item.week);
+        if (startDate && itemDate < startDate) return false;
+        if (endDate && itemDate > endDate) return false;
+        return true;
+      });
+    }
+
     // Group temperature data by area and group (depth)
-    const groupedData = temperatureTrendData.reduce((acc, item) => {
+    const groupedData = filteredData.reduce((acc, item) => {
       const key = `${item.area_name}-${item.group}`;
       if (!acc[key]) {
         acc[key] = [];
@@ -78,7 +101,7 @@ export function Temperature() {
     }, {} as Record<string, TemperatureTrendData[]>);
 
     // Get all unique weeks/dates for x-axis
-    const allWeeks = Array.from(new Set(temperatureTrendData.map(item => item.week))).sort();
+    const allWeeks = Array.from(new Set(filteredData.map(item => item.week))).sort();
 
     selectedAreas.forEach((areaId, areaIndex) => {
       const area = productionAreas.find(a => a.area_id === areaId);
@@ -147,7 +170,7 @@ export function Temperature() {
       xAxisData,
       dateRange,
     };
-  }, [selectedAreas, temperatureTrendData, productionAreas]);
+  }, [selectedAreas, temperatureTrendData, productionAreas, startDate, endDate]);
 
   return (
     <Box style={{ height: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', background: '#1a365d' }}>
@@ -155,7 +178,24 @@ export function Temperature() {
         <Title order={1} c="white">Sjøtemperatur</Title>
       </Box>
 
-      <Box style={{ flex: 1, display: 'flex', padding: '0 1rem 1rem 1rem', gap: '1rem' }}>
+      <Box style={{ 
+        flex: 1, 
+        display: 'flex', 
+        padding: '0 1rem 1rem 1rem', 
+        paddingRight: (sidebarOpen && !isMobile) ? '340px' : '1rem', // Add space for fixed sidebar on desktop only
+        transition: 'padding-right 0.3s ease',
+      }}>
+        <FilterSidebar
+          isOpen={sidebarOpen}
+          onToggle={toggleSidebar}
+          productionAreas={productionAreas}
+          selectedAreas={selectedAreas}
+          onAreaToggle={handleAreaToggle}
+          startDate={startDate}
+          endDate={endDate}
+          onDateChange={handleDateChange}
+        />
+
         <Box style={{ flex: 1, minHeight: 0 }}>
           <Paper p="lg" radius="md" bg="dark.8" style={{ height: '100%' }}>
             {chartData ? (
@@ -258,31 +298,6 @@ export function Temperature() {
                 <Text c="dimmed">Velg produksjonsområder for å vise temperaturdata</Text>
               </Box>
             )}
-          </Paper>
-        </Box>
-
-        <Box style={{ width: '300px', flexShrink: 0 }}>
-          <Paper p="md" radius="md" bg="dark.8" style={{ height: '100%' }}>
-            <Stack gap="md" style={{ height: '100%' }}>
-              <Title order={3} c="white" size="lg">Produksjonsområde</Title>
-
-              <ScrollArea style={{ flex: 1 }}>
-                <Stack gap="xs">
-                  {productionAreas.map((area) => (
-                    <Checkbox
-                      key={area.area_id}
-                      label={area.area_name}
-                      checked={selectedAreas.includes(area.area_id)}
-                      onChange={() => handleAreaToggle(area.area_id)}
-                      styles={{
-                        label: { color: 'white', fontSize: '14px' },
-                        input: { backgroundColor: 'transparent' },
-                      }}
-                    />
-                  ))}
-                </Stack>
-              </ScrollArea>
-            </Stack>
           </Paper>
         </Box>
       </Box>
