@@ -1,40 +1,19 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
-  Container,
-  Grid,
   Paper,
   Title,
   Text,
   Stack,
   Checkbox,
-  Group,
   ScrollArea,
   Box,
 } from '@mantine/core';
-import ReactEChartsCore from 'echarts-for-react/lib/core';
-import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
-import {
-  GridComponent,
-  TooltipComponent,
-  LegendComponent,
-  TitleComponent,
-} from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
 import type { ProductionArea } from '../types/production_area';
 import type { TemperatureTrendData } from '../types/temperature_trend';
 import api from '../services/api';
 import { isKeycloakReady } from '../config/keycloak';
-
-// Register necessary components
-echarts.use([
-  LineChart,
-  GridComponent,
-  TooltipComponent,
-  LegendComponent,
-  TitleComponent,
-  CanvasRenderer,
-]);
+import { LineChart } from 'aqc-charts';
+import type { ChartSeries, LegendConfig, TooltipConfig } from 'aqc-charts';
 
 
 export function Temperature() {
@@ -85,7 +64,7 @@ export function Temperature() {
   const chartData = useMemo(() => {
     if (selectedAreas.length === 0 || temperatureTrendData.length === 0) return null;
 
-    const series: any[] = [];
+    const series: ChartSeries[] = [];
     const colors = ['#FFD93D', '#6BCF7F', '#4D9DE0', '#E15554', '#F18F01'];
 
     // Group temperature data by area and group (depth)
@@ -115,7 +94,7 @@ export function Temperature() {
       areaGroups.forEach((group, groupIndex) => {
         const key = `${area.area_name}-${group}`;
         const groupData = groupedData[key] || [];
-        
+
         // Sort by week and extract temperature values
         const sortedData = groupData.sort((a, b) => a.week.localeCompare(b.week));
         const temperatureValues = allWeeks.map(week => {
@@ -124,31 +103,28 @@ export function Temperature() {
         });
 
         // Determine line style based on group name
-        let lineStyle = 'solid';
-        let symbol = 'none';
+        let lineType: 'solid' | 'dotted' | 'dashed' = 'solid';
+        let symbol: 'circle' | 'none' = 'none';
         if (group.toLowerCase().includes('overflate') || group.toLowerCase().includes('surface')) {
-          lineStyle = 'dotted';
+          lineType = 'dotted';
           symbol = 'circle';
         } else if (group.toLowerCase().includes('dyp') || group.toLowerCase().includes('deep')) {
-          lineStyle = 'dashed';
+          lineType = 'dashed';
         }
 
         series.push({
           name: `${group} - ${area.area_name}`,
           type: 'line',
           data: temperatureValues,
-          smooth: true,
-          connectNulls: false,
+          color: colors[areaIndex % colors.length],
           lineStyle: {
-            type: lineStyle,
+            type: lineType,
             width: 2,
-            color: colors[areaIndex % colors.length],
-          },
-          itemStyle: {
-            color: colors[areaIndex % colors.length],
           },
           symbol: symbol,
           symbolSize: 4,
+          smooth: true,
+          connectNulls: false,
         });
       });
     });
@@ -162,104 +138,14 @@ export function Temperature() {
     });
 
     // Get date range for subtitle
-    const dateRange = allWeeks.length > 0 
+    const dateRange = allWeeks.length > 0
       ? `${allWeeks[0]} - ${allWeeks[allWeeks.length - 1]}`
       : '';
 
     return {
-      backgroundColor: '#1a365d',
-      textStyle: {
-        color: '#ffffff',
-      },
-      title: {
-        text: 'Temperaturutvikling per område og dybde',
-        subtext: dateRange,
-        left: 'left',
-        textStyle: {
-          color: '#ffffff',
-          fontSize: 18,
-          fontWeight: 'bold',
-        },
-        subtextStyle: {
-          color: '#a0aec0',
-          fontSize: 12,
-        },
-      },
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        borderColor: '#4a5568',
-        textStyle: {
-          color: '#ffffff',
-        },
-        formatter: (params: any) => {
-          let tooltip = `<div style="margin-bottom: 8px;"><strong>${params[0].axisValue}</strong></div>`;
-          params.forEach((param: any) => {
-            if (param.value !== null) {
-              tooltip += `<div style="margin: 4px 0;">
-                <span style="color: ${param.color};">●</span> 
-                ${param.seriesName}: <strong>${param.value}°C</strong>
-              </div>`;
-            }
-          });
-          return tooltip;
-        },
-      },
-      legend: {
-        type: 'scroll',
-        orient: 'vertical',
-        right: 10,
-        top: 20,
-        bottom: 20,
-        textStyle: {
-          color: '#ffffff',
-        },
-        pageTextStyle: {
-          color: '#ffffff',
-        },
-      },
-      grid: {
-        left: '3%',
-        right: '20%',
-        bottom: '10%',
-        top: '15%',
-        containLabel: true,
-      },
-      xAxis: {
-        type: 'category',
-        data: xAxisData,
-        axisLabel: {
-          color: '#a0aec0',
-          rotate: 45,
-        },
-        axisLine: {
-          lineStyle: {
-            color: '#4a5568',
-          },
-        },
-      },
-      yAxis: {
-        type: 'value',
-        name: 'Temperatur (°C)',
-        nameTextStyle: {
-          color: '#ffffff',
-        },
-        axisLabel: {
-          color: '#a0aec0',
-          formatter: '{value}°C'
-        },
-        axisLine: {
-          lineStyle: {
-            color: '#4a5568',
-          },
-        },
-        splitLine: {
-          lineStyle: {
-            color: '#2d3748',
-          },
-        },
-      },
       series,
+      xAxisData,
+      dateRange,
     };
   }, [selectedAreas, temperatureTrendData, productionAreas]);
 
@@ -273,10 +159,99 @@ export function Temperature() {
         <Box style={{ flex: 1, minHeight: 0 }}>
           <Paper p="lg" radius="md" bg="dark.8" style={{ height: '100%' }}>
             {chartData ? (
-              <ReactEChartsCore
-                echarts={echarts}
-                option={chartData}
-                style={{ height: '100%', width: '100%' }}
+              <LineChart
+                data={chartData.series}
+                width="100%"
+                height="100%"
+                title={{
+                  text: 'Temperaturutvikling per område og dybde',
+                  subtext: chartData.dateRange,
+                  textStyle: {
+                    color: '#ffffff',
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                  },
+                  subtextStyle: {
+                    color: '#a0aec0',
+                    fontSize: 12,
+                  },
+                  left: 'left',
+                }}
+                xAxis={{
+                  type: 'category',
+                  data: chartData.xAxisData,
+                  axisLabel: {
+                    color: '#a0aec0',
+                    rotate: 45,
+                  },
+                  axisLine: {
+                    lineStyle: {
+                      color: '#4a5568',
+                    },
+                  },
+                }}
+                yAxis={{
+                  type: 'value',
+                  name: 'Temperatur (°C)',
+                  nameTextStyle: {
+                    color: '#ffffff',
+                  },
+                  axisLabel: {
+                    color: '#a0aec0',
+                    formatter: '{value}°C'
+                  },
+                  axisLine: {
+                    lineStyle: {
+                      color: '#4a5568',
+                    },
+                  },
+                  splitLine: {
+                    lineStyle: {
+                      color: '#2d3748',
+                    },
+                  },
+                }}
+                legend={{
+                  type: 'scroll',
+                  orient: 'vertical',
+                  right: 10,
+                  top: 20,
+                  bottom: 20,
+                  textStyle: {
+                    color: '#ffffff',
+                  },
+                  pageTextStyle: {
+                    color: '#ffffff',
+                  },
+                }}
+                tooltip={{
+                  trigger: 'axis',
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  borderColor: '#4a5568',
+                  textStyle: {
+                    color: '#ffffff',
+                  },
+                  formatter: (params: any) => {
+                    if (!Array.isArray(params)) return '';
+
+                    let tooltip = `<div style="margin-bottom: 8px;"><strong>${params[0].axisValue}</strong></div>`;
+                    params.forEach((param: any) => {
+                      if (param.value !== null) {
+                        tooltip += `<div style="margin: 4px 0;">
+                          <span style="color: ${param.color};">●</span> 
+                          ${param.seriesName}: <strong>${param.value}°C</strong>
+                        </div>`;
+                      }
+                    });
+                    return tooltip;
+                  },
+                }}
+                theme={{
+                  backgroundColor: '#1a365d',
+                  textStyle: {
+                    color: '#ffffff',
+                  },
+                }}
               />
             ) : (
               <Box ta="center" pt="xl">
