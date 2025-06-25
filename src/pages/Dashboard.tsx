@@ -76,7 +76,7 @@ useEffect(() => {
 
   const fetchLossByRegion = async () => {
     try {
-      const response = await api.get<{ data: LossByRegionRecord[] }>('/v3/loss-mortality/loss-by-region'); // ✅ Correct type
+      const response = await api.get<{ data: LossByRegionRecord[] }>('/v3/loss-mortality/loss-by-region');
       setLossByRegion(response.data?.data || []);
     } catch (error) {
       console.error('[Dashboard] Failed to fetch loss by region:', error);
