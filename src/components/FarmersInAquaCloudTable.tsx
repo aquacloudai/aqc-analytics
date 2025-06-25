@@ -11,6 +11,9 @@ interface Props {
   farmers: Farmer[];
 }
 
+
+
+
 export function FarmersInAquaCloudTable({ farmers }: Props) {
   return (
     <Paper p="md" radius="md" withBorder>

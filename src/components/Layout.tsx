@@ -21,7 +21,7 @@ export function Layout() {
 
   const navigation = [
     { path: '/', label: 'Dashboard', icon: IconDashboard },
-    { path: '/analytics', label: 'Analytics', icon: IconChartBar },
+    { path: '/fishhealth', label: 'Fiskehelse & Velferd', icon: IconChartBar },
     { path: '/temperature', label: 'Temperature', icon: IconTemperature },
     { path: '/map', label: 'Farm Map', icon: IconMap },
     { path: '/reports', label: 'Reports', icon: IconReport },
@@ -76,32 +76,76 @@ export function Layout() {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="md">
-        <AppShell.Section grow>
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                component={Link}
-                to={item.path}
-                label={item.label}
-                leftSection={<Icon size={20} />}
-                active={location.pathname === item.path}
-                mb="xs"
-              />
-            );
-          })}
-        </AppShell.Section>
-        
-        {user?.farmerId && (
-          <AppShell.Section>
-            <Text size="xs" c="dimmed">
-              Farmer ID: {user.farmerId}
-            </Text>
-          </AppShell.Section>
-        )}
-      </AppShell.Navbar>
+<AppShell.Navbar p="md">
+  <AppShell.Section grow>
+    {/* FishHealth dropdown manually declared */}
+    <NavLink
+      label="Fiskehelse & Velferd"
+      leftSection={<IconChartBar size={20} />}
+      childrenOffset={16}
+      defaultOpened={location.pathname.startsWith('/fishhealth')}
+      mb="xs"
+    >
+      <NavLink
+        component={Link}
+        to="/fishhealth/overview"
+        label="Oversikt"
+        active={location.pathname === '/fishhealth/overview'}
+      />
+      <NavLink
+        component={Link}
+        to="/fishhealth/mortality"
+        label="Dødelighet"
+        active={location.pathname === '/fishhealth/mortality'}
+      />
+      <NavLink
+        component={Link}
+        to="/fishhealth/trend"
+        label="Trender"
+        active={location.pathname === '/fishhealth/trend'}
+      />
+      <NavLink
+        component={Link}
+        to="/fishhealth/handling"
+        label="Håndtering"
+        active={location.pathname === '/fishhealth/handling'}
+      />
+      <NavLink
+        component={Link}
+        to="/fishhealth/codelist"
+        label="Kodeliste"
+        active={location.pathname === '/fishhealth/codelist'}
+      />
+    </NavLink>
+
+    {/* Render other menu items from navigation */}
+    {navigation
+      .filter((item) => item.path !== '/fishhealth') // skip FishHealth from auto-render
+      .map((item) => {
+        const Icon = item.icon;
+        return (
+          <NavLink
+            key={item.path}
+            component={Link}
+            to={item.path}
+            label={item.label}
+            leftSection={<Icon size={20} />}
+            active={location.pathname === item.path}
+            mb="xs"
+          />
+        );
+      })}
+  </AppShell.Section>
+
+  {user?.farmerId && (
+    <AppShell.Section>
+      <Text size="xs" c="dimmed">
+        Farmer ID: {user.email}
+      </Text>
+    </AppShell.Section>
+  )}
+</AppShell.Navbar>
+
 
       <AppShell.Main>
         <Outlet />
