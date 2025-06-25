@@ -13,11 +13,28 @@ import {
   IconFilter,
   IconTemperature
 } from '@tabler/icons-react';
+import { FilterSidebar } from './FilterSidebar';
+import { useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
 
 export function Layout() {
   const [opened, { toggle }] = useDisclosure();
   const location = useLocation();
   const { user, logout } = useAuthStore();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
+    const isMobile = useMediaQuery('(max-width: 768px)');
+
+  
+  const handleDateChange = (start: Date | null, end: Date | null) => {
+      setStartDate(start);
+      setEndDate(end);
+    };
+  
+  const toggleSidebar = () => {
+      setSidebarOpen(!sidebarOpen);
+    };
 
   const navigation = [
     { path: '/', label: 'Dashboard', icon: IconDashboard },
@@ -145,6 +162,13 @@ export function Layout() {
     </AppShell.Section>
   )}
 </AppShell.Navbar>
+<FilterSidebar
+  isOpen={sidebarOpen}
+  onToggle={toggleSidebar}
+  startDate={startDate}
+  endDate={endDate}
+  onDateChange={handleDateChange}
+/>
 
 
       <AppShell.Main>
