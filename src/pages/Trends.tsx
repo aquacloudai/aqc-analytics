@@ -32,7 +32,11 @@ import {
 } from '@tabler/icons-react';
 import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
 import { StackedBarChart, PieChart } from 'aqc-charts';
-import { MortalityCategoryRateTable } from '../components/LossMortalityCategoryRateTable';
+import { MortalityCategoryRateTable } from '../components/tables/LossMortalityCategoryRateTable';
+
+import { useFilterStore } from '../store/filterStore';
+import dayjs from 'dayjs';
+
 
 
 // Enhanced color palette
@@ -133,6 +137,21 @@ const downloadChartData = (data: MortalityCategoryRate[], filename: string = 'mo
 
 
 export function Trends() {
+
+    const applyFilters = useFilterStore((s) => s.applyFilters);
+
+    const fromMonthRaw = useFilterStore((s) => s.from_month);
+    const toMonthRaw = useFilterStore((s) => s.to_month);
+
+    const fromMonth = fromMonthRaw ? fromMonthRaw.format('YYYY-MM') : undefined;
+    const toMonth = toMonthRaw ? toMonthRaw.format('YYYY-MM') : undefined;
+
+    const area = useFilterStore((s) => s.selectedArea);
+    const generation = useFilterStore((s) => s.selectedGeneration);
+    const weightRangeStart = useFilterStore((s) => s.weightRangeStart);
+    const weightRangeEnd = useFilterStore((s) => s.weightRangeEnd);
+    const includeSelf = useFilterStore((s) => s.include_self);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [mortalityCategories, setMortalityCategories] = useState<MortalityCategoryRate[]>([]);
@@ -146,25 +165,42 @@ export function Trends() {
 
     const fetchData = async () => {
         if (!isKeycloakReady()) return;
-
         setLoading(true);
         setError(null);
 
-        try {
-            const response = await api.get<{ data: MortalityCategoryRate[] }>('/v3/loss-mortality/loss-mortality-category-rate');
-            const categories = response.data?.data || [];
-            setMortalityCategories(categories);
+       try {
+            const response = await api.get<{ data: MortalityCategoryRate[] }>(
+                '/v3/loss-mortality/loss-mortality-category-rate',
+                {
+                    params: {
+                        include_self: includeSelf,
+
+                        ...(fromMonth && { from_month: `${fromMonth}-01` }),
+                        ...(toMonth && { to_month: `${toMonth}-01` }),
+                        area: area || '%',
+                        generation: generation || undefined,
+                        weight_range_start: weightRangeStart,
+                        weight_range_end: weightRangeEnd,
+                        period_grouping: 'month',
+                        offset: 0,
+                        limit: 10000,
+                    }
+                }
+            );
+
+            setMortalityCategories(response.data?.data || []);
         } catch (error) {
-            console.error('[Trends] Failed to fetch mortality categories:', error);
-            setError('Kunne ikke laste dødelighets kategorier. Vennligst prøv igjen.');
+        console.error('[Trends] Failed to fetch mortality categories:', error);
+        setError('Kunne ikke laste dødelighetskategorier. Vennligst prøv igjen.');
         } finally {
-            setLoading(false);
+        setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [applyFilters]);
+    
 
     // Memoized chart data processing
     const chartData = useMemo(() => {
@@ -504,9 +540,8 @@ export function Trends() {
                         title=""
                         width="100%"
                         height={400}
-                        innerRadius={60}
+                        innerradius={60}
                         showLabels
-                        labelFormat={(entry: { name: string; value: number }) => `${entry.name}: ${entry.value.toFixed(1)}`}
                     />
                 </div>
 
@@ -521,9 +556,9 @@ export function Trends() {
                 </Text>
 
                 <ScrollArea style={{ height: '400px' }}>
-                   <MortalityCategoryRateTable
+                    <MortalityCategoryRateTable
                         mortalityCategoryRates={mortalityCategories}
-                        />
+                    />
 
                 </ScrollArea>
             </Paper>

@@ -5,7 +5,7 @@ import {
   Table,
   Badge,
 } from '@mantine/core';
-import type { Farmer } from '../types/farmer';
+import type { Farmer } from '../../types/farmer';
 
 interface Props {
   farmers: Farmer[];

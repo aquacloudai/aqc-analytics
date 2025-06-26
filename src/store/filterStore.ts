@@ -1,54 +1,65 @@
 import { create } from 'zustand';
 import dayjs, { Dayjs } from 'dayjs';
 
-export interface FilterState {
-  // Date range filters
-  startDate: Dayjs | null;
-  endDate: Dayjs | null;
-  
-  // Farm filters
-  selectedFarms: string[];
-  selectedPens: string[];
-  selectedBatches: string[];
-  
-  // Data filters
-  showOwnDataOnly: boolean;
-  aggregationLevel: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  
-  // Metric filters
-  selectedMetrics: string[];
-  
-  // Actions
-  setDateRange: (start: Dayjs | null, end: Dayjs | null) => void;
-  setSelectedFarms: (farms: string[]) => void;
-  setSelectedPens: (pens: string[]) => void;
-  setSelectedBatches: (batches: string[]) => void;
-  setShowOwnDataOnly: (show: boolean) => void;
-  setAggregationLevel: (level: 'daily' | 'weekly' | 'monthly' | 'yearly') => void;
-  setSelectedMetrics: (metrics: string[]) => void;
+interface FilterState {
+  from_month: Dayjs | null;
+  to_month: Dayjs | null;
+  selectedArea: string | null;
+  selectedGeneration: string | null;
+  weightRangeStart: number;
+  weightRangeEnd: number;
+  include_self: boolean;
+  searchTerm: string;
+  selectedCategories: string[];
+
+  applyFilters: boolean;
+  triggerApplyFilters: () => void;
+
+  // Setters
+  setFromMonth: (start: Dayjs | null) => void;
+  setToMonth: (end: Dayjs | null) => void;
+  setSelectedArea: (area: string | null) => void;
+  setSelectedUtsett: (utsett: string | null) => void;
+  setWeightRangeStart: (value: number) => void;
+  setWeightRangeEnd: (value: number) => void;
+  setIncludeSelf: (show: boolean) => void;
+  setSearchTerm: (term: string) => void;
+  toggleCategory: (category: string) => void;
   resetFilters: () => void;
 }
 
 const defaultState = {
-  startDate: dayjs().subtract(30, 'days'),
-  endDate: dayjs(),
-  selectedFarms: [],
-  selectedPens: [],
-  selectedBatches: [],
-  showOwnDataOnly: false,
-  aggregationLevel: 'daily' as const,
-  selectedMetrics: [],
+  from_month: dayjs('2024-05-01'),
+  to_month: dayjs(),
+  selectedArea: null,
+  selectedGeneration: null,
+  weightRangeStart: 0,
+  weightRangeEnd: 10000,
+  include_self: true,
+  searchTerm: '',
+  selectedCategories: [],
+  applyFilters: false,
 };
 
-export const useFilterStore = create<FilterState>((set) => ({
+export const useFilterStore = create<FilterState>((set, get) => ({
   ...defaultState,
-  
-  setDateRange: (start, end) => set({ startDate: start, endDate: end }),
-  setSelectedFarms: (farms) => set({ selectedFarms: farms }),
-  setSelectedPens: (pens) => set({ selectedPens: pens }),
-  setSelectedBatches: (batches) => set({ selectedBatches: batches }),
-  setShowOwnDataOnly: (show) => set({ showOwnDataOnly: show }),
-  setAggregationLevel: (level) => set({ aggregationLevel: level }),
-  setSelectedMetrics: (metrics) => set({ selectedMetrics: metrics }),
+
+
+  setFromMonth: (start) => set({ from_month: start }),
+  setToMonth: (end) => set({ to_month: end }),
+  setSelectedArea: (area) => set({ selectedArea: area }),
+  setSelectedUtsett: (generation) => set({ selectedGeneration: generation }),
+  setWeightRangeStart: (value) => set({ weightRangeStart: value }),
+  setWeightRangeEnd: (value) => set({ weightRangeEnd: value }),
+  setIncludeSelf: (show) => set({ include_self: show }),
+  setSearchTerm: (term) => set({ searchTerm: term }),
+  toggleCategory: (category) => {
+    const { selectedCategories } = get();
+    const updated = selectedCategories.includes(category)
+      ? selectedCategories.filter((c) => c !== category)
+      : [...selectedCategories, category];
+    set({ selectedCategories: updated });
+  },
   resetFilters: () => set(defaultState),
+  triggerApplyFilters: () => set((state) => ({ applyFilters: !state.applyFilters })),
 }));

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useFilterStore } from '../store/filterStore';
+import dayjs from 'dayjs';
 import {
   Box,
   Paper,
@@ -20,11 +22,11 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { MonthPickerInput } from '@mantine/dates';
-import { 
-  IconChevronRight, 
-  IconCalendar, 
-  IconFilter, 
-  IconX, 
+import {
+  IconChevronRight,
+  IconCalendar,
+  IconFilter,
+  IconX,
   IconSearch,
   IconAdjustments,
   IconRefresh,
@@ -35,50 +37,70 @@ import {
 interface FilterSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
-  startDate?: Date | null;
-  endDate?: Date | null;
-  onDateChange?: (startDate: Date | null, endDate: Date | null) => void;
 }
 
 export function FilterSidebar({
   isOpen,
   onToggle,
-  startDate,
-  endDate,
-  onDateChange,
 }: FilterSidebarProps) {
+
+  const triggerApplyFilters = useFilterStore((s) => s.triggerApplyFilters);
+  // toggle states
   const [dateFiltersOpen, setDateFiltersOpen] = useState(true);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
-  const [selectedUtsett, setSelectedUtsett] = useState<string | null>(null);
-  const [weightRange, setWeightRange] = useState<[number, number]>([0, 10000]);
-  const [minWeight, setMinWeight] = useState<number>(0);
-  const [maxWeight, setMaxWeight] = useState<number>(10000);
-  const [includeOwnData, setIncludeOwnData] = useState<boolean>(true);
+
+  // filter states
+  const selectedArea = useFilterStore((s) => s.selectedArea);
+  const setSelectedArea = useFilterStore((s) => s.setSelectedArea);
+
+  const selectedGeneration = useFilterStore((s) => s.selectedGeneration);
+  const setSelectedUtsett = useFilterStore((s) => s.setSelectedUtsett);
+
+  const weightRangeStart = useFilterStore((s) => s.weightRangeStart);
+  const setWeightRangeStart = useFilterStore((s) => s.setWeightRangeStart);
+
+  const weightRangeEnd = useFilterStore((s) => s.weightRangeEnd);
+  const setWeightRangeEnd = useFilterStore((s) => s.setWeightRangeEnd);
+
+  const includeSelf = useFilterStore((s) => s.include_self);
+  const setIncludeSelf = useFilterStore((s) => s.setIncludeSelf);
+
+  const fromMonth = useFilterStore((s) => s.from_month);
+  const toMonth = useFilterStore((s) => s.to_month);
+
+  const setFromMonth = useFilterStore((s) => s.setFromMonth);
+  const setToMonth = useFilterStore((s) => s.setToMonth);
+
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+
+
   // Mock data for demonstration
   const areas = [
-    'Nord-Norge', 'Midt-Norge', 'Vestlandet', 'Østlandet', 'Sørlandet'
-  ];
-  
-  const utsettOptions = [
-    'Utsett 2023 - Vinter', 'Utsett 2023 - Vår', 'Utsett 2023 - Sommer', 
-    'Utsett 2024 - Vinter', 'Utsett 2024 - Vår', 'Utsett 2024 - Sommer'
+    'Norge', 'Sør-Norge', 'PO 2 & 3', 'PO 3 & 4', 'Midt-Norge', "PO 5",
+    'Nord-Norge', 'PO 5 & 6', 'PO 6', 'PO 7 & 8', 'PO 12 & 13', "PO 9, 10 & 11"
   ];
 
-  const categories = ['Torsk', 'Laks', 'Ørret', 'Sei', 'Hyse', 'Makrell'];
+  const utsettOptions = [
+    '2021 - Vår', '2021 - Høst',
+    '2022 - Vår', '2022 - Høst',
+    '2023 - Vår', '2023 - Høst',
+    '2024 - Vår', '2024 - Høst',
+    '2025 - Vår', '2025 - Høst'
+  ];
+
+  const categories = ['Laks', 'Ørret'];
 
   // Calculate active filters count
   const getActiveFiltersCount = () => {
     let count = 0;
     if (selectedArea) count++;
-    if (selectedUtsett) count++;
-    if (weightRange[0] > 0 || weightRange[1] < 10000) count++;
-    if (startDate || endDate) count++;
-    if (!includeOwnData) count++;
+    if (selectedGeneration) count++;
+    if (weightRangeStart) count++;
+    if (weightRangeEnd) count++;
+    if (includeSelf) count++;
     if (searchTerm) count++;
     if (selectedCategories.length > 0) count++;
     return count;
@@ -87,39 +109,54 @@ export function FilterSidebar({
   const resetFilters = () => {
     setSelectedArea(null);
     setSelectedUtsett(null);
-    setWeightRange([0, 10000]);
-    setMinWeight(0);
-    setMaxWeight(10000);
-    setIncludeOwnData(true);
+    setWeightRangeStart(0);
+    setWeightRangeEnd(10000);
+    setFromMonth(dayjs('2024-05-01'));
+    setToMonth(dayjs());
+    setIncludeSelf(false);
     setSearchTerm('');
     setSelectedCategories([]);
-    onDateChange?.(null, null);
   };
 
   const handleWeightRangeChange = (value: [number, number]) => {
-    setWeightRange(value);
-    setMinWeight(value[0]);
-    setMaxWeight(value[1]);
+    setWeightRangeStart(value[0]);
+    setWeightRangeEnd(value[1]);
   };
 
-  const handleMinWeightChange = (value: number | string) => {
+  const handleWeightRangeStartChange = (value: number | string) => {
     const numValue = typeof value === 'string' ? parseInt(value) || 0 : value;
-    setMinWeight(numValue);
-    setWeightRange([numValue, maxWeight]);
+    setWeightRangeStart(numValue);
+
   };
 
-  const handleMaxWeightChange = (value: number | string) => {
+  const handleWeightRangeEndChange = (value: number | string) => {
     const numValue = typeof value === 'string' ? parseInt(value) || 0 : value;
-    setMaxWeight(numValue);
-    setWeightRange([minWeight, numValue]);
+    setWeightRangeEnd(numValue);
+
   };
 
   const toggleCategory = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
+    setSelectedCategories(prev =>
+      prev.includes(category)
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
+  };
+
+  const handleFromMonthChange = (date: Date | null) => {
+    if (date) {
+      setFromMonth(dayjs(date));
+    } else {
+      setFromMonth(null);
+    }
+  };
+
+  const handleToMonthChange = (date: Date | null) => {
+    if (date) {
+      setToMonth(dayjs(date));
+    } else {
+      setToMonth(null);
+    }
   };
 
   useEffect(() => {
@@ -128,7 +165,7 @@ export function FilterSidebar({
     } else {
       document.body.style.overflow = 'unset';
     }
-    
+
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -287,7 +324,7 @@ export function FilterSidebar({
                 label="Utsett"
                 placeholder="Velg utsett"
                 data={utsettOptions}
-                value={selectedUtsett}
+                value={selectedGeneration}
                 onChange={setSelectedUtsett}
                 clearable
                 searchable
@@ -308,7 +345,7 @@ export function FilterSidebar({
                   Vektintervall (gram)
                 </Text>
                 <RangeSlider
-                  value={weightRange}
+                  value={weightRangeStart !== 0 || weightRangeEnd !== 10000 ? [weightRangeStart, weightRangeEnd] : [0, 10000]}
                   onChange={handleWeightRangeChange}
                   min={0}
                   max={10000}
@@ -326,17 +363,17 @@ export function FilterSidebar({
                 <Group grow>
                   <NumberInput
                     label="Min vekt"
-                    value={minWeight}
-                    onChange={handleMinWeightChange}
+                    value={weightRangeStart}
+                    onChange={handleWeightRangeStartChange}
                     min={0}
-                    max={maxWeight}
+                    max={weightRangeEnd}
                     suffix=" g"
                   />
                   <NumberInput
                     label="Max vekt"
-                    value={maxWeight}
-                    onChange={handleMaxWeightChange}
-                    min={minWeight}
+                    value={weightRangeEnd}
+                    onChange={handleWeightRangeEndChange}
+                    min={weightRangeStart}
                     max={10000}
                     suffix=" g"
                   />
@@ -368,8 +405,8 @@ export function FilterSidebar({
                     <MonthPickerInput
                       label="Fra måned"
                       placeholder="Velg startmåned"
-                      value={startDate}
-                      onChange={(date) => onDateChange?.(date as Date | null, endDate as Date | null)}
+                      value={fromMonth?.toDate() || null}
+                      onChange={(value) => handleFromMonthChange(value ? new Date(value) : null)}
                       clearable
                       styles={{
                         input: {
@@ -381,9 +418,9 @@ export function FilterSidebar({
                     />
                     <MonthPickerInput
                       label="Til måned"
-                      placeholder="Velg slutmåned"
-                      value={endDate}
-                      onChange={(date) => onDateChange?.(startDate as Date | null, date as Date | null)}
+                      placeholder="Velg sluttmåned"
+                      value={toMonth?.toDate() || null}
+                      onChange={(value) => handleToMonthChange(value ? new Date(value) : null)}
                       clearable
                       styles={{
                         input: {
@@ -398,6 +435,7 @@ export function FilterSidebar({
               </Box>
 
               <Divider />
+
 
               {/* Advanced Filters */}
               <Box>
@@ -441,8 +479,8 @@ export function FilterSidebar({
               {/* Options */}
               <Checkbox
                 label="Inkluder egne data"
-                checked={includeOwnData}
-                onChange={(event) => setIncludeOwnData(event.currentTarget.checked)}
+                checked={includeSelf}
+                onChange={(event) => setIncludeSelf(event.currentTarget.checked)}
                 color="blue"
               />
             </Stack>
@@ -451,19 +489,22 @@ export function FilterSidebar({
           {/* Footer Actions */}
           <Box p="lg" style={{ borderTop: '1px solid #e9ecef' }}>
             <Group grow>
-              <Button 
-                variant="light" 
-                color="gray" 
+              <Button
+                variant="light"
+                color="gray"
                 onClick={resetFilters}
                 leftSection={<IconRefresh size={16} />}
                 disabled={activeFiltersCount === 0}
               >
                 Nullstill
               </Button>
-              <Button 
-                variant="filled" 
+              <Button
+                variant="filled"
                 color="blue"
-                onClick={onToggle}
+                onClick={() => {
+                  triggerApplyFilters();
+                  onToggle(); // closes sidebar
+                }}
               >
                 Bruk filtere
               </Button>
