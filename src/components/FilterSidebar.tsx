@@ -23,7 +23,6 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import { MonthPickerInput } from '@mantine/dates';
 import {
-  IconChevronRight,
   IconCalendar,
   IconFilter,
   IconX,
@@ -213,42 +212,51 @@ export function FilterSidebar({
         }}
       >
         {/* Toggle Button */}
-        <ActionIcon
-          onClick={onToggle}
-          variant="filled"
-          color="blue"
-          size="xl"
-          style={{
-            position: 'fixed',
-            top: '80px',
-            right: isOpen ? (isMobile ? '20px' : '390px') : '20px',
-            zIndex: 1001,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease',
-            transform: isOpen ? 'rotate(0deg)' : 'rotate(180deg)',
-          }}
-        >
-          {isOpen ? <IconX size={24} /> : <IconFilter size={24} />}
-          {activeFiltersCount > 0 && !isOpen && (
-            <Badge
-              size="xs"
-              color="red"
-              style={{
-                position: 'absolute',
-                top: -5,
-                right: -5,
-                minWidth: 18,
-                height: 18,
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {activeFiltersCount}
-            </Badge>
-          )}
-        </ActionIcon>
+<Box
+  style={{
+    position: 'fixed',
+    top: '80px',
+    right: isOpen ? (isMobile ? '20px' : '390px') : '20px',
+    zIndex: 1001,
+  }}
+>
+    <ActionIcon
+      onClick={onToggle}
+      variant="filled"
+      color="blue"
+      size="xl"
+      style={{
+        position: 'relative',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease',
+        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+      }}
+    >
+      {isOpen ? <IconX size={24} /> : <IconFilter size={24} />}
+    </ActionIcon>
+
+    {activeFiltersCount > 0 && !isOpen && (
+      <Badge
+        size="xs"
+        color="red"
+        style={{
+          position: 'absolute',
+          top: -6,
+          right: -6,
+          zIndex: 1002,
+          minWidth: 18,
+          height: 18,
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {activeFiltersCount}
+      </Badge>
+    )}
+  </Box>
+
 
         {/* Sidebar Content */}
         <Paper
