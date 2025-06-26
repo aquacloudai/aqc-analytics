@@ -24,15 +24,7 @@ export function Layout() {
   const location = useLocation();
   const { user, logout } = useAuthStore();
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [startDate, setStartDate] = useState<Date | null>(null);
-    const [endDate, setEndDate] = useState<Date | null>(null);
     const isMobile = useMediaQuery('(max-width: 768px)');
-
-  
-  const handleDateChange = (start: Date | null, end: Date | null) => {
-      setStartDate(start);
-      setEndDate(end);
-    };
   
   const toggleSidebar = () => {
       setSidebarOpen(!sidebarOpen);
@@ -102,6 +94,14 @@ export function Layout() {
   <AppShell.Section grow>
     {/* FishHealth dropdown manually declared */}
     <NavLink
+      label="Dashboard"
+      leftSection={<IconDashboard size={20} />}
+      component={Link}
+      active={location.pathname === '/'}
+      to="/"
+      mb="xs"
+    />
+    <NavLink
       label="Fiskehelse & Velferd"
       leftSection={<IconChartBar size={20} />}
       childrenOffset={16}
@@ -139,24 +139,46 @@ export function Layout() {
         active={location.pathname === '/fishhealth/codelist'}
       />
     </NavLink>
-
-    {/* Render other menu items from navigation */}
-    {navigation
-      .filter((item) => item.path !== '/fishhealth') // skip FishHealth from auto-render
-      .map((item) => {
-        const Icon = item.icon;
-        return (
-          <NavLink
-            key={item.path}
-            component={Link}
-            to={item.path}
-            label={item.label}
-            leftSection={<Icon size={20} />}
-            active={location.pathname === item.path}
-            mb="xs"
-          />
-        );
-      })}
+    <NavLink
+      label="Temperature"
+      leftSection={<IconTemperature size={20} />}
+      component={Link}
+      active={location.pathname === '/temperature'}
+      to="/temperature"
+      mb="xs"
+    />
+    <NavLink
+      label="Farm Map"
+      leftSection={<IconMap size={20} />}
+      component={Link}
+      active={location.pathname === '/map'}
+      to="/map"
+      mb="xs"
+    />
+    <NavLink
+      label="Reports"
+      leftSection={<IconReport size={20} />}
+      component={Link}
+      active={location.pathname === '/reports'}
+      to="/reports"
+      mb="xs"
+    />
+    <NavLink
+      label="Data Filters"
+      leftSection={<IconFilter size={20} />}
+      component={Link}
+      active={location.pathname === '/filters'}
+      to="/filters"
+      mb="xs"
+    />
+    <NavLink
+      label="Settings"
+      leftSection={<IconSettings size={20} />}
+      component={Link}
+      active={location.pathname === '/settings'}
+      to="/settings"
+      mb="xs"
+    />
   </AppShell.Section>
 
   {user?.farmerId && (
@@ -170,9 +192,6 @@ export function Layout() {
 <FilterSidebar
   isOpen={sidebarOpen}
   onToggle={toggleSidebar}
-  startDate={startDate}
-  endDate={endDate}
-  onDateChange={handleDateChange}
 />
 
 
