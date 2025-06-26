@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { AppShell, Burger, Group, NavLink, Button, Avatar, Menu, Text } from '@mantine/core';
+import { AppShell, Burger, Group, NavLink, Button, Avatar, Menu, Text, Image } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuthStore } from '../store/authStore';
 import { 
@@ -16,6 +16,8 @@ import {
 import { FilterSidebar } from './FilterSidebar';
 import { useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
+import logo from '../assets/logo.png';
+
 
 export function Layout() {
   const [opened, { toggle }] = useDisclosure();
@@ -60,7 +62,10 @@ export function Layout() {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Text size="lg" fw={700}>AQC Analytics</Text>
+            <Group gap="xs">
+              <Image src={logo} alt="AquaCloud Logo" height={50} />
+            </Group>
+
           </Group>
           
           <Menu shadow="md" width={200}>

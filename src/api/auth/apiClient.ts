@@ -3,7 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import keycloak, { isKeycloakReady } from '../config/keycloak';
+import keycloak, { isKeycloakReady } from '../../config/keycloak';
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || 'https://apee.aquacloud.ai';
 

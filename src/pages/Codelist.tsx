@@ -1,6 +1,6 @@
 import { Title, Paper, Tabs, Table, Text, Badge, Loader, Alert, ScrollArea, Group, Stack, Button } from '@mantine/core';
 import { useState, useEffect } from 'react';
-import api from '../services/api';
+import api from '../api/auth/apiClient';
 import { isKeycloakReady } from '../config/keycloak';
 import { IconAlertCircle, IconDownload } from '@tabler/icons-react';
 import type { Codelist } from '../types/codelist';

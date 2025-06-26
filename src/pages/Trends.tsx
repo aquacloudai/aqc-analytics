@@ -19,7 +19,7 @@ import {
     Tooltip
 } from '@mantine/core';
 import { useState, useEffect, useMemo } from 'react';
-import api from '../services/api';
+import api from '../api/auth/apiClient';
 import { isKeycloakReady } from '../config/keycloak';
 import {
     IconAlertCircle,
@@ -134,8 +134,6 @@ const downloadChartData = (data: MortalityCategoryRate[], filename: string = 'mo
     URL.revokeObjectURL(url);
 };
 
-
-
 export function Trends() {
 
     const applyFilters = useFilterStore((s) => s.applyFilters);
@@ -168,7 +166,7 @@ export function Trends() {
         setLoading(true);
         setError(null);
 
-       try {
+        try {
             const response = await api.get<{ data: MortalityCategoryRate[] }>(
                 '/v3/loss-mortality/loss-mortality-category-rate',
                 {
@@ -190,17 +188,17 @@ export function Trends() {
 
             setMortalityCategories(response.data?.data || []);
         } catch (error) {
-        console.error('[Trends] Failed to fetch mortality categories:', error);
-        setError('Kunne ikke laste dødelighetskategorier. Vennligst prøv igjen.');
+            console.error('[Trends] Failed to fetch mortality categories:', error);
+            setError('Kunne ikke laste dødelighetskategorier. Vennligst prøv igjen.');
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchData();
     }, [applyFilters]);
-    
+
 
     // Memoized chart data processing
     const chartData = useMemo(() => {
@@ -493,62 +491,56 @@ export function Trends() {
             </Paper>
 
             {chartData && (
-                <Paper shadow="sm" p="md">
-                    <Group justify="space-between" align="center" mb="md">
-                        <Text size="lg" fw={600}>
-                            {selectedMetricLabel} - Trend over tid
-                        </Text>
+                <Grid gutter="md" grow>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                        <Paper shadow="sm" p="md" h="100%">
+                            <Text size="lg" fw={600} mb="md">
+                                {selectedMetricLabel} – Trend over tid
+                            </Text>
 
-                        <Group>
-                            <Tooltip label="Diagram informasjon">
-                                <ActionIcon variant="subtle" size="sm">
-                                    <IconInfoCircle size="1rem" />
-                                </ActionIcon>
-                            </Tooltip>
-                        </Group>
-                    </Group>
+                            <div style={{ height: '500px', width: '100%' }}>
+                                <StackedBarChart
+                                    data={chartData}
+                                    title=""
+                                    width="100%"
+                                    height={500}
+                                    horizontal={showHorizontal}
+                                    showValues={showValues}
+                                />
+                            </div>
 
-                    <div style={{ height: '500px', width: '100%' }}>
-                        <StackedBarChart
-                            data={chartData}
-                            title=""
-                            width="100%"
-                            height={500}
-                            horizontal={showHorizontal}
-                            showValues={showValues}
-                        />
-                    </div>
+                            <Text size="xs" c="dimmed" mt="sm">
+                                Basert på {mortalityCategories.length} datapunkter.
+                                Sist oppdatert: {new Date().toLocaleString('nb-NO')}
+                            </Text>
+                        </Paper>
+                    </Grid.Col>
 
-                    <Text size="xs" c="dimmed" mt="sm">
-                        Basert på {mortalityCategories.length} datapunkter.
-                        Sist oppdatert: {new Date().toLocaleString('nb-NO')}
-                    </Text>
-                </Paper>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                        <Paper shadow="sm" p="md" h="100%">
+                            <Text size="lg" fw={600} mb="md">
+                                {selectedMetricLabel} – Fordeling per gruppe
+                            </Text>
 
+                            <div style={{ height: '500px', width: '100%' }}>
+                                <PieChart
+                                    data={pieChartData}
+                                    title=""
+                                    width="100%"
+                                    height={500}
+                                    innerradius={60}
+                                    showLabels
+                                />
+                            </div>
 
-
+                            <Text size="xs" c="dimmed" mt="sm">
+                                Viser fordeling av valgt måling for alle grupper.
+                            </Text>
+                        </Paper>
+                    </Grid.Col>
+                </Grid>
             )}
 
-            <Paper shadow="sm" p="md" mt="xl">
-                <Text size="lg" fw={600} mb="md">
-                    {selectedMetricLabel} - Fordeling per gruppe
-                </Text>
-
-                <div style={{ height: '400px', width: '100%' }}>
-                    <PieChart
-                        data={pieChartData}
-                        title=""
-                        width="100%"
-                        height={400}
-                        innerradius={60}
-                        showLabels
-                    />
-                </div>
-
-                <Text size="xs" c="dimmed" mt="sm">
-                    Viser fordeling av valgt måling for alle grupper.
-                </Text>
-            </Paper>
 
             <Paper shadow="sm" p="md" mt="xl">
                 <Text size="lg" fw={600} mb="md">
