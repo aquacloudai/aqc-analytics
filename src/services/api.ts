@@ -23,9 +23,7 @@ async function ensureToken(): Promise<void> {
     const refreshed = await keycloak.updateToken(30);
     if (refreshed) {
       console.log('[ensureToken] Token was refreshed');
-    } else {
-      console.log('[ensureToken] Token is still valid');
-    }
+    } 
   } catch (err) {
     console.error('[ensureToken] Token refresh failed:', err);
     keycloak.login();
@@ -42,7 +40,6 @@ api.interceptors.request.use(
     if (keycloak.token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${keycloak.token}`;
-      console.log('[interceptor] Attached token to request');
     }
 
     return config;

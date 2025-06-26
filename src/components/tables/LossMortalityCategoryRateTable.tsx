@@ -5,7 +5,7 @@ import {
   Table,
   Badge,
 } from '@mantine/core';
-import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
+import type { MortalityCategoryRate } from '../../types/loss_mortality_category_rate';
 
 interface Props {
   mortalityCategoryRates: MortalityCategoryRate[];

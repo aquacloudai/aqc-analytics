@@ -13,8 +13,8 @@ import { isKeycloakReady } from '../config/keycloak';
 import type { FarmAndSiteStats } from '../types/farm_and_site_stats';
 import type { AquacloudFdirBiomassPerMonth } from '../types/aquacloud_fdir_biomass_per_month';
 
-import { FarmersInAquaCloudTable } from '../components/FarmersInAquaCloudTable';
-import { BiomassComparisonChart } from '../components/BiomassComparisonChart';
+import { FarmersInAquaCloudTable } from '../components/tables/FarmersInAquaCloudTable';
+import { BiomassComparisonChart } from '../components/charts/BiomassComparisonChart';
 import { LossByRegionOverview } from '../components/LossByRegionContainer';
 import type { LossByRegionRecord } from '../types/loss_by_region';
 

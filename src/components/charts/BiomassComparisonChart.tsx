@@ -1,7 +1,7 @@
 import { Paper, Title } from '@mantine/core';
 import ReactECharts from 'echarts-for-react';
-import type { AquacloudFdirBiomassPerMonth } from '../types/aquacloud_fdir_biomass_per_month';
-import { useTheme } from '../contexts/ThemeContext';
+import type { AquacloudFdirBiomassPerMonth } from '../../types/aquacloud_fdir_biomass_per_month';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface Props {
   data: AquacloudFdirBiomassPerMonth[];
