@@ -11,7 +11,7 @@ import { MapContainer, TileLayer, Popup, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api from '../api/auth/apiClient';
 import { isKeycloakReady } from '../config/keycloak';
 import type { Site } from '../types/site';
 
@@ -101,6 +101,12 @@ export function FarmMap() {
               <Popup>
                 <Stack gap="xs">
                   <Title order={6}>{site.site_name}</Title>
+                  <div>
+                    <strong>Plassering:</strong> {site.placement}
+                  </div>
+                  <div>
+                    <strong>Sjø:</strong> {site.marine_type_region_name || 'Ikke registrert'}
+                  </div>
                   {site.marine_type_name && (
                     <div>
                       <strong>Marine Type:</strong> {site.marine_type_name}
@@ -108,7 +114,7 @@ export function FarmMap() {
                   )}
                   {site.production_area_name && (
                     <div>
-                      <strong>Area:</strong> {site.production_area_name}
+                      <strong>PO:</strong> {site.production_area_name}
                     </div>
                   )}
                   <div>

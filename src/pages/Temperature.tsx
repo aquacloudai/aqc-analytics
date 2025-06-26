@@ -8,7 +8,7 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import type { ProductionArea } from '../types/production_area';
 import type { TemperatureTrendData } from '../types/temperature_trend';
-import api from '../services/api';
+import api from '../api/auth/apiClient';
 import { isKeycloakReady } from '../config/keycloak';
 import { LineChart } from 'aqc-charts';
 import type { ChartSeries, LegendConfig, TooltipConfig } from 'aqc-charts';

@@ -1,101 +1,94 @@
-import { Paper, Title } from '@mantine/core';
+import {
+  Paper,
+  Title,
+  Text,
+  Loader,
+  Group,
+  Alert,
+} from '@mantine/core';
+import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import ReactECharts from 'echarts-for-react';
-import type { AquacloudFdirBiomassPerMonth } from '../../types/aquacloud_fdir_biomass_per_month';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useFilterStore } from '../../store/filterStore';
+import { useBiomassComparisonData } from '../../hooks/useBiomassComparionData';
+import { transformBiomassChartData, getBiomassChartOptions } from '../../utils/biomass';
 
-interface Props {
-  data: AquacloudFdirBiomassPerMonth[];
-}
-
-export function BiomassComparisonChart({ data }: Props) {
+export function BiomassComparisonChart() {
   const { colorScheme } = useTheme();
+  const applyFilters = useFilterStore((s) => s.applyFilters);
+  const fromMonthRaw = useFilterStore((s) => s.from_month);
+  const toMonthRaw = useFilterStore((s) => s.to_month);
+  const fromMonth = fromMonthRaw?.format('YYYY-MM');
+  const toMonth = toMonthRaw?.format('YYYY-MM');
+
+  const {
+    data: biomassData,
+    loading,
+    error,
+    refetch,
+  } = useBiomassComparisonData(fromMonth, toMonth, [applyFilters]);
+
+  const chartData = transformBiomassChartData(biomassData);
+  const chartOption = getBiomassChartOptions(chartData, colorScheme === 'dark');
+
+  if (loading) {
+    return (
+      <ChartCard>
+        <Group justify="center" h={400}>
+          <Loader size="lg" />
+        </Group>
+      </ChartCard>
+    );
+  }
+
+  if (error) {
+    return (
+      <ChartCard>
+        <Alert
+          icon={<IconAlertCircle size={16} />}
+          title="Feil"
+          color="red"
+          variant="light"
+        >
+          {error}
+          <Group mt="sm">
+            <IconRefresh size={16} style={{ cursor: 'pointer' }} onClick={refetch} />
+            <Text size="sm" style={{ cursor: 'pointer' }} onClick={refetch}>
+              Prøv igjen
+            </Text>
+          </Group>
+        </Alert>
+      </ChartCard>
+    );
+  }
+
+  if (!biomassData?.length || !chartData) {
+    return (
+      <ChartCard>
+        <Group justify="center" h={400}>
+          <Text c="dimmed">Ingen data for valgt periode</Text>
+        </Group>
+      </ChartCard>
+    );
+  }
 
   return (
-    <Paper p="md" radius="md" withBorder>
-      <Title order={4} mb="md">Biomass development per month</Title>
+    <ChartCard>
       <ReactECharts
-        option={{
-          backgroundColor: 'transparent',
-          grid: {
-            left: 60,
-            right: 30,
-            top: 30,
-            bottom: 80,
-          },
-          xAxis: {
-            type: 'category',
-            data: data.map(item => item.month),
-            axisLine: {
-              lineStyle: {
-                color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
-              },
-            },
-            axisTick: {
-              lineStyle: {
-                color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
-              },
-            },
-            axisLabel: {
-              color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
-              fontSize: 10,
-              rotate: -45,
-            },
-          },
-          yAxis: {
-            type: 'value',
-            axisLine: {
-              lineStyle: {
-                color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
-              },
-            },
-            axisTick: {
-              lineStyle: {
-                color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
-              },
-            },
-            axisLabel: {
-              color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
-              fontSize: 12,
-            },
-            splitLine: {
-              lineStyle: {
-                color: colorScheme === 'dark' ? '#90d0d7' : '#e9ecef',
-                type: 'dashed',
-              },
-            },
-          },
-          tooltip: {
-            trigger: 'axis',
-            backgroundColor: colorScheme === 'dark' ? '#014059' : '#ffffff',
-            borderColor: '#90d0d7',
-            borderWidth: 1,
-            textStyle: {
-              color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
-            },
-          },
-          legend: {
-            data: ['Fiskeridirektoratet', 'AquaCloud'],
-            textStyle: {
-              color: colorScheme === 'dark' ? '#90d0d7' : '#495057',
-            },
-          },
-          series: [
-            {
-              name: 'Fiskeridirektoratet',
-              type: 'bar',
-              data: data.map(item => item.fiskeridirektoratet_biomass_in_tons ?? 0),
-              itemStyle: { color: '#228be6' },
-            },
-            {
-              name: 'AquaCloud',
-              type: 'bar',
-              data: data.map(item => item.aquacloud_biomass_in_tons ?? 0),
-              itemStyle: { color: '#fab005' },
-            },
-          ],
-        }}
-        style={{ height: '400px', width: '100%' }}
+        option={chartOption}
+        style={{ height: '450px', width: '100%' }}
+        opts={{ renderer: 'svg' }}
       />
+    </ChartCard>
+  );
+}
+
+// Reusable layout wrapper
+function ChartCard({ children }: { children: React.ReactNode }) {
+  return (
+    <Paper p="md" radius="md" withBorder>
+      <Title order={4} mb="md">Biomasseutvikling per måned</Title>
+      {children}
     </Paper>
   );
 }
