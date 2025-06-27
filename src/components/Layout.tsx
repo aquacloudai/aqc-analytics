@@ -116,9 +116,9 @@ export function Layout() {
       />
       <NavLink
         component={Link}
-        to="/fishhealth/mortality"
-        label="Dødelighet"
-        active={location.pathname === '/fishhealth/mortality'}
+        to="/fishhealth/benchmark"
+        label="Benchmark"
+        active={location.pathname === '/fishhealth/benchmark'}
       />
       <NavLink
         component={Link}

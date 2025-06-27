@@ -6,6 +6,7 @@ import { useLossByRegion } from '../hooks/useLossByRegion';
 import { FarmersInAquaCloudTable } from '../components/tables/FarmersInAquaCloudTable';
 import { BiomassComparisonChart } from '../components/charts/BiomassComparisonChart';
 import { LossByRegionOverview } from '../components/LossByRegionContainer';
+import { TemperatureLineChart } from '../components/charts/TemperatureByWeekAndRegion';
 
 export function Dashboard() {
   const { data: farmers } = useFarmers();
@@ -30,6 +31,8 @@ export function Dashboard() {
       </Paper>
 
       <LossByRegionOverview data={lossByRegion} />
+
+      <TemperatureLineChart />
 
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12, lg: 4 }}>

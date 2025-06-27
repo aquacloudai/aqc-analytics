@@ -10,6 +10,7 @@ import { Trends } from './pages/Trends';
 
 // Fish health subpages
 import { Codelist } from './pages/Codelist';
+import { Benchmark } from './pages/Benchmark';
 
 const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
         element: <Outlet />, // wrapper for fish health submenu
         children: [
           { path: 'trend', element: <Trends /> },
+          { path: 'benchmark', element: <Benchmark /> },
 
           { path: 'codelist', element: <Codelist /> },
         ],
