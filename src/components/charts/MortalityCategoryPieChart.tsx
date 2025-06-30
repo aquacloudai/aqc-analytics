@@ -65,7 +65,7 @@ export function MortalityCategoryPieChart({
           showLegend
           center={['50%', '50%']}
           radius={['20%', '60%']}
-          legendOptions={{
+          legend={{
             type: 'scroll',
             orient: 'vertical',
             right: 20,
