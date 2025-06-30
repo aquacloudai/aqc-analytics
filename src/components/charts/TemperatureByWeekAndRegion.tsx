@@ -4,39 +4,45 @@ import { useTemperatureByWeekAndRegion } from '../../hooks/useTemperatureByWeekA
 import { useMemo } from 'react';
 
 export function TemperatureLineChart() {
-  const { data, isLoading, error } = useTemperatureByWeekAndRegion();
-
   type TemperatureDataItem = {
     production_region_name: string;
     measurement_week_date: string;
     avg_temperature: number;
   };
 
+  const { data, isLoading, error } = useTemperatureByWeekAndRegion() as {
+    data: TemperatureDataItem[] | undefined;
+    isLoading: boolean;
+    error: unknown;
+  };
+
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return null;
 
-    const grouped = data.reduce(
-      (acc: Record<string, { x: string; y: number }[]>, item: TemperatureDataItem) => {
-        const region = item.production_region_name;
-        if (!acc[region]) acc[region] = [];
-        acc[region].push({
-          x: item.measurement_week_date,
-          y: item.avg_temperature,
-        });
-        return acc;
-      },
-      {}
-    );
+    // 1. Sort dates and ensure uniqueness
+    const allDates = Array.from(
+      new Set(data.map((item) => item.measurement_week_date))
+    ).sort();
 
-    const series = Object.entries(grouped).map(([region, points]) => ({
+    // 2. Group temperature values by region
+    const grouped: Record<string, Record<string, number>> = {};
+    for (const item of data) {
+      if (!grouped[item.production_region_name]) {
+        grouped[item.production_region_name] = {};
+      }
+      grouped[item.production_region_name][item.measurement_week_date] = item.avg_temperature;
+    }
+
+    // 3. Create series data with aligned x-axis values
+    const series = Object.entries(grouped).map(([region, tempsByDate]) => ({
       name: region,
-      type: 'line',
-      data: (points as { x: string; y: number }[]).map(p => [p.x, p.y]), // echarts accepts [x, y]
-      smooth: true,
-      connectNulls: true,
+      data: allDates.map((date) => tempsByDate[date] ?? null), // insert null for missing values
     }));
 
-    return series;
+    return {
+      categories: allDates,
+      series,
+    };
   }, [data]);
 
   if (isLoading || !chartData) return null;
@@ -50,20 +56,14 @@ export function TemperatureLineChart() {
         height={400}
         xAxis={{
           type: 'category',
-          axisLabel: {
-            rotate: 45,
-          },
+          axisLabel: { rotate: 45 },
         }}
         yAxis={{
           type: 'value',
           name: '°C',
-          axisLabel: {
-            formatter: '{value}°C',
-          },
+          axisLabel: { formatter: '{value}°C' },
         }}
-        tooltip={{
-          trigger: 'axis',
-        }}
+        tooltip={{ trigger: 'axis' }}
         legend={{ type: 'scroll' }}
       />
     </Paper>
