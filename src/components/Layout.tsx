@@ -11,7 +11,9 @@ import {
   IconLogout,
   IconUser,
   IconFilter,
-  IconTemperature
+  IconTemperature,
+  IconBug,
+  IconBuildingFactory
 } from '@tabler/icons-react';
 import { FilterSidebar } from './FilterSidebar';
 import { useState } from 'react';
@@ -139,6 +141,28 @@ export function Layout() {
         active={location.pathname === '/fishhealth/codelist'}
       />
     </NavLink>
+     <NavLink
+      label="Produksjon"
+      leftSection={<IconBuildingFactory size={20} />}
+      childrenOffset={16}
+      defaultOpened={location.pathname.startsWith('/production')}
+      mb="xs"
+    >
+      <NavLink
+        component={Link}
+        to="/production/sfr"
+        label="Utforing/SFR"
+        active={location.pathname === '/production/sfr'}
+      />
+    </NavLink>
+    <NavLink
+      label="Lus"
+      leftSection={<IconBug size={20} />}
+      component={Link}
+      active={location.pathname === '/lice'}
+      to="/lice"
+      mb="xs"
+    />
     <NavLink
       label="Temperature"
       leftSection={<IconTemperature size={20} />}
@@ -161,14 +185,6 @@ export function Layout() {
       component={Link}
       active={location.pathname === '/reports'}
       to="/reports"
-      mb="xs"
-    />
-    <NavLink
-      label="Data Filters"
-      leftSection={<IconFilter size={20} />}
-      component={Link}
-      active={location.pathname === '/filters'}
-      to="/filters"
       mb="xs"
     />
     <NavLink
