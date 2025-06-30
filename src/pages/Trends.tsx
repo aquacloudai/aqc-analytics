@@ -1,10 +1,7 @@
 import {
     Title,
     Paper,
-    Tabs,
-    Table,
     Text,
-    Badge,
     Loader,
     Alert,
     ScrollArea,
@@ -18,28 +15,22 @@ import {
     ActionIcon,
     Tooltip
 } from '@mantine/core';
-import { useState, useEffect, useMemo } from 'react';
-import api from '../api/auth/apiClient';
-import { isKeycloakReady } from '../config/keycloak';
+import { useState, useMemo } from 'react';
 import {
     IconAlertCircle,
     IconDownload,
     IconRefresh,
-    IconChartBar,
-    IconChartLine,
     IconSettings,
-    IconInfoCircle
 } from '@tabler/icons-react';
 import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
-import { StackedBarChart, PieChart } from 'aqc-charts';
+import { StackedBarChart } from 'aqc-charts';
 import { MortalityCategoryRateTable } from '../components/tables/LossMortalityCategoryRateTable';
+import { MortalityCategoryPieChart } from '../components/charts/MortalityCategoryPieChart';
+import { useMortalityCategoryRates } from '../hooks/useLossByCategory';
+import { formatPeriod, downloadChartData } from '../utils/downloadCSV';
+import { MortalitySankeyChart } from '../components/charts/MortalityCategorySankeyChart';
 
-import { useFilterStore } from '../store/filterStore';
-import dayjs from 'dayjs';
 
-
-
-// Enhanced color palette
 const CHART_COLORS = [
     '#5470c6', '#91cc75', '#fac858', '#ee6666',
     '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
@@ -69,90 +60,11 @@ const GROUPING_OPTIONS = [
     { value: 'category', label: 'Kategori navn' }
 ];
 
-// Helper function to format period display
-const formatPeriod = (period: string): string => {
-    const [year, month] = period.split('-');
-    const monthNames = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mai', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des'
-    ];
-    return `${monthNames[parseInt(month) - 1]} ${year}`;
-};
-
-// Helper function to download chart data as CSV
-const downloadChartData = (data: MortalityCategoryRate[], filename: string = 'mortality_trends.csv') => {
-    const headers = [
-        'Periode',
-        'Kategori kode',
-        'Kategori navn',
-        'Kategori kort navn',
-        'Level 1 kategori',
-        'Tap antall',
-        'Dødelighet antall',
-        'Utkasting antall',
-        'Tap rate (%)',
-        'Dødelighet rate (%)',
-        'Utkasting rate (%)',
-        'Gjennomsnittlig vekt tap (g)',
-        'Gjennomsnittlig vekt død (g)',
-        'Gjennomsnittlig vekt utkastet (g)'
-    ];
-
-    const csvRows = data.map(item => [
-        formatPeriod(item.period),
-        item.loss_category_code,
-        item.category_name,
-        item.category_short_name,
-        item.category_level_1_name,
-        item.loss_count.toString(),
-        item.mortality_count.toString(),
-        item.culling_count.toString(),
-        item.loss_rate.toFixed(2),
-        item.mortality_rate.toFixed(2),
-        item.culling_rate.toFixed(2),
-        item.loss_avg_weight_gram.toString(),
-        item.mortality_avg_weight_gram.toString(),
-        (item.culling_avg_weight_gram || 0).toString()
-    ]);
-
-    const csvContent = [headers, ...csvRows]
-        .map(row => row.map(field => `"${field}"`).join(','))
-        .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-};
 
 export function Trends() {
 
-    const applyFilters = useFilterStore((s) => s.applyFilters);
+    const { data: mortalityCategories, loading, error, refetch: fetchData } = useMortalityCategoryRates();
 
-    const fromMonthRaw = useFilterStore((s) => s.from_month);
-    const toMonthRaw = useFilterStore((s) => s.to_month);
-
-    const fromMonth = fromMonthRaw ? fromMonthRaw.format('YYYY-MM') : undefined;
-    const toMonth = toMonthRaw ? toMonthRaw.format('YYYY-MM') : undefined;
-
-    const area = useFilterStore((s) => s.selectedArea);
-    const generation = useFilterStore((s) => s.selectedGeneration);
-    const weightRangeStart = useFilterStore((s) => s.weightRangeStart);
-    const weightRangeEnd = useFilterStore((s) => s.weightRangeEnd);
-    const includeSelf = useFilterStore((s) => s.include_self);
-
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [mortalityCategories, setMortalityCategories] = useState<MortalityCategoryRate[]>([]);
 
     // Chart configuration state
     const [selectedMetric, setSelectedMetric] = useState<string>('loss_rate');
@@ -161,48 +73,14 @@ export function Trends() {
     const [showHorizontal, setShowHorizontal] = useState(false);
     const [showValues, setShowValues] = useState(false);
 
-    const fetchData = async () => {
-        if (!isKeycloakReady()) return;
-        setLoading(true);
-        setError(null);
 
-        try {
-            const response = await api.get<{ data: MortalityCategoryRate[] }>(
-                '/v3/loss-mortality/loss-mortality-category-rate',
-                {
-                    params: {
-                        include_self: includeSelf,
-
-                        ...(fromMonth && { from_month: `${fromMonth}-01` }),
-                        ...(toMonth && { to_month: `${toMonth}-01` }),
-                        area: area || '%',
-                        generation: generation || undefined,
-                        weight_range_start: weightRangeStart,
-                        weight_range_end: weightRangeEnd,
-                        period_grouping: 'month',
-                        offset: 0,
-                        limit: 10000,
-                    }
-                }
-            );
-
-            setMortalityCategories(response.data?.data || []);
-        } catch (error) {
-            console.error('[Trends] Failed to fetch mortality categories:', error);
-            setError('Kunne ikke laste dødelighetskategorier. Vennligst prøv igjen.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, [applyFilters]);
 
 
     // Memoized chart data processing
     const chartData = useMemo(() => {
         if (!mortalityCategories.length) return null;
+
+        console.log(mortalityCategories);
 
         const periods = [...new Set(mortalityCategories.map(item => item.period))].sort();
 
@@ -259,38 +137,6 @@ export function Trends() {
             categories: periods.map(formatPeriod),
             series: series.filter(s => s.data.some(d => d > 0)), // Remove empty series
         };
-    }, [mortalityCategories, selectedMetric, grouping]);
-
-    const pieChartData = useMemo(() => {
-        if (!mortalityCategories.length) return [];
-
-        const grouped = new Map<string, number>();
-
-        mortalityCategories.forEach(item => {
-            let key: string;
-            switch (grouping) {
-                case 'level1':
-                    key = item.category_level_1_name;
-                    break;
-                case 'code':
-                    key = item.loss_category_code[0];
-                    break;
-                case 'category':
-                    key = item.category_short_name;
-                    break;
-                default:
-                    key = item.category_level_1_name;
-            }
-
-            const value = item[selectedMetric as keyof MortalityCategoryRate] as number;
-            grouped.set(key, (grouped.get(key) || 0) + (value ?? 0));
-        });
-
-        return Array.from(grouped.entries()).map(([name, value], i) => ({
-            name,
-            value,
-            color: CHART_COLORS[i % CHART_COLORS.length],
-        }));
     }, [mortalityCategories, selectedMetric, grouping]);
 
 
@@ -517,42 +363,36 @@ export function Trends() {
                     </Grid.Col>
 
                     <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Paper shadow="sm" p="md" h="100%">
-                            <Text size="lg" fw={600} mb="md">
-                                {selectedMetricLabel} – Fordeling per gruppe
-                            </Text>
-
-                            <div style={{ height: '500px', width: '100%' }}>
-                                <PieChart
-                                    data={pieChartData}
-                                    title=""
-                                    width="100%"
-                                    height={500}
-                                    innerradius={60}
-                                    showLabels
-                                />
-                            </div>
-
-                            <Text size="xs" c="dimmed" mt="sm">
-                                Viser fordeling av valgt måling for alle grupper.
-                            </Text>
-                        </Paper>
+                        <MortalityCategoryPieChart
+                            data={mortalityCategories}
+                            selectedMetric={selectedMetric as keyof MortalityCategoryRate}
+                            grouping={grouping as 'level1' | 'code' | 'category'}
+                            metricLabel={selectedMetricLabel}
+                        />
                     </Grid.Col>
                 </Grid>
             )}
 
 
             <Paper shadow="sm" p="md" mt="xl">
-                <Text size="lg" fw={600} mb="md">
-                    Detaljert Kategori Oversikt
-                </Text>
-
                 <ScrollArea style={{ height: '400px' }}>
                     <MortalityCategoryRateTable
                         mortalityCategoryRates={mortalityCategories}
                     />
 
                 </ScrollArea>
+            </Paper>
+
+            <Paper shadow="sm" p="md" mt="xl">
+                <Text size="lg" fw={600} mb="md">
+                    Dødelighets Kategorier
+                </Text>
+
+                <Text size="sm" c="dimmed" mb="md">
+                    Denne tabellen viser detaljerte dødelighetsdata per kategori.
+                </Text>
+
+                <MortalitySankeyChart data={mortalityCategories} showFarmerData={false} />
             </Paper>
 
 

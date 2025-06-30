@@ -2,6 +2,25 @@ import { Grid, Paper, Stack, Flex, Select, SegmentedControl } from '@mantine/cor
 import { useLossByGeneration } from '../hooks/useLossByGeneration';
 import { LineChart } from 'aqc-charts';
 import { useState, useMemo } from 'react';
+import type { LossMortalityGenerationRate } from '../types/loss_mortality_generation_rate';
+
+const metricMap = {
+  loss: {
+    aqua: 'cumulative_loss_rate',
+    farmer: 'farmer_cumulative_loss_rate',
+    label: 'Akkumulert tap',
+  },
+  mortality: {
+    aqua: 'cumulative_mortality_rate',
+    farmer: 'farmer_cumulative_mortality_rate',
+    label: 'Akkumulert dødelighet',
+  },
+  culling: {
+    aqua: 'cumulative_culling_rate',
+    farmer: 'farmer_cumulative_culling_rate',
+    label: 'Akkumulert utslakting',
+  },
+};
 
 export function Benchmark() {
   const { data: lossByGeneration, loading, error } = useLossByGeneration();
@@ -12,8 +31,8 @@ export function Benchmark() {
 
   const generations = useMemo(() => {
     if (!lossByGeneration) return [];
-    const unique = Array.from(new Set(lossByGeneration.map(d => d.generation))).sort();
-    return unique.map(g => ({ value: g, label: g }));
+    const unique = Array.from(new Set(lossByGeneration.map((d) => d.generation))).sort();
+    return unique.map((g) => ({ value: g, label: g }));
   }, [lossByGeneration]);
 
   const filtered = useMemo(() => {
@@ -23,68 +42,48 @@ export function Benchmark() {
   }, [lossByGeneration, generation]);
 
   const labels = filtered.map((d) =>
-    period === 'month' ? d.loss_rate_month : d.generation_month_number
+    period === 'month' ? d.loss_rate_month : d.generation_month_number.toString()
   );
-
-  const metricMap = {
-    loss: {
-      aqua: 'cumulative_loss_rate',
-      farmer: 'farmer_cumulative_loss_rate',
-      label: 'Akkumulert tap',
-    },
-    mortality: {
-      aqua: 'cumulative_mortality_rate',
-      farmer: 'farmer_cumulative_mortality_rate',
-      label: 'Akkumulert dødelighet',
-    },
-    culling: {
-      aqua: 'cumulative_culling_rate',
-      farmer: 'farmer_cumulative_culling_rate',
-      label: 'Akkumulert utslakting',
-    },
-  };
 
   const { aqua, farmer, label } = metricMap[selectedMetric];
 
-  const aquacloudData = filtered.map((d) =>
-    typeof d[aqua as keyof typeof d] === 'number' ? +((d[aqua as keyof typeof d] as number) * 100).toFixed(2) : null
-  );
+  const chartData = filtered.map((d) => {
+    const label = period === 'month' ? d.loss_rate_month : d.generation_month_number.toString();
+    const aquaValue = d[aqua as keyof LossMortalityGenerationRate];
+    const farmerValue = d[farmer as keyof LossMortalityGenerationRate];
 
-  const farmerData = filtered.map((d) =>
-    typeof d[farmer as keyof typeof d] === 'number' ? +((d[farmer as keyof typeof d] as number) * 100).toFixed(2) : null
-  );
+    const point: Record<string, string | number> = { label };
 
-  const hasValidFarmerData = farmerData.some(value => value !== null);
+    if (typeof aquaValue === 'number') {
+      point['AquaCloud'] = +(aquaValue * 100).toFixed(2);
+    }
+    if (typeof farmerValue === 'number') {
+      point['Oppdretter'] = +(farmerValue * 100).toFixed(2);
+    }
 
-  // Create chart data with the processed values
-  const chartData = labels.map((label, i) => ({
-    label,
-    aquacloud: aquacloudData[i],
-    farmer: hasValidFarmerData ? farmerData[i] : null,
-  }));
+    return point;
+  });
 
-  // Series should only use dataKey when providing data prop to LineChart
   const chartSeries = [
-    { 
-      name: 'AquaCloud', 
-      dataKey: 'aquacloud' 
+    {
+      name: 'AquaCloud',
+      type: 'line',
+      data: chartData.map(d => d.AquaCloud),
     },
-    ...(hasValidFarmerData
-      ? [{ 
-          name: 'Oppdretter', 
-          dataKey: 'farmer', 
-          line: { dash: 'dot' } 
-        }]
-      : []),
+    {
+      name: 'Oppdretter',
+      type: 'line',
+      data: chartData.map(d => d.Oppdretter),
+    },
   ];
 
-  if (loading) {
-    return <Paper p="md">Laster data...</Paper>;
-  }
 
-  if (error) {
-    return <Paper p="md">Feil: {error}</Paper>;
-  }
+  console.log('chartData:', chartData);
+  console.log('chartSeries:', chartSeries);
+
+
+  if (loading) return <Paper p="md">Laster data...</Paper>;
+  if (error) return <Paper p="md">Feil: {error}</Paper>;
 
   return (
     <Stack gap="lg">
@@ -120,26 +119,36 @@ export function Benchmark() {
 
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12 }}>
-          {generation && filtered.length > 0 ? (
+          {generation && chartData.length > 0 ? (
             <LineChart
-              title={`${label} over tid (${generation})`}
-              xAxis={labels}
-              series={chartSeries}
-              data={chartData}
-              height={400}
+              title="Test chart"
+              xAxis={['Jan', 'Feb']}
+              data={[
+                { label: 'Jan', AquaCloud: 1.2, Oppdretter: 1.1 },
+                { label: 'Feb', AquaCloud: 2.3, Oppdretter: 2.1 },
+              ]}
+              series={[
+                { name: 'AquaCloud', dataKey: 'AquaCloud' },
+                { name: 'Oppdretter', dataKey: 'Oppdretter' },
+              ]}
               unit="%"
+              height={300}
             />
+
           ) : (
             <Paper p="md" radius="md" withBorder>
               <div>
-                {!generation 
-                  ? "Velg en generasjon for å vise data." 
-                  : "Ingen data for valgt generasjon."
-                }
+                {!generation
+                  ? 'Velg en generasjon for å vise data.'
+                  : 'Ingen data for valgt generasjon.'}
               </div>
             </Paper>
           )}
         </Grid.Col>
+
+
+
+
       </Grid>
     </Stack>
   );
