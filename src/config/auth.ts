@@ -1,4 +1,7 @@
 // Authentication configuration
+import { isKeycloakReady } from './keycloak';
+
+// Authentication configuration
 export const authConfig = {
   // Set to 'mock' to disable Keycloak authentication for development
   // Set to 'keycloak' to use Keycloak authentication
@@ -20,10 +23,9 @@ export const isMockAuth = authConfig.mode === 'mock';
 // Auth-agnostic ready check - works for both Keycloak and mock auth
 export const isAuthReady = (): boolean => {
   if (isMockAuth) {
-    return true; // Mock auth is always ready
+    // For mock auth, always ready
+    return true;
   }
-  
   // For Keycloak, check keycloak ready state
-  const { isKeycloakReady } = require('./keycloak');
   return isKeycloakReady();
 };

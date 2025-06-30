@@ -2,10 +2,10 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { AppShell, Burger, Group, NavLink, Button, Avatar, Menu, Text, Image } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuthStore } from '../store/authStore';
-import { 
-  IconDashboard, 
-  IconChartBar, 
-  IconMap, 
+import {
+  IconDashboard,
+  IconChartBar,
+  IconMap,
   IconReport,
   IconSettings,
   IconLogout,
@@ -25,12 +25,12 @@ export function Layout() {
   const [opened, { toggle }] = useDisclosure();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const isMobile = useMediaQuery('(max-width: 768px)');
-  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
   const toggleSidebar = () => {
-      setSidebarOpen(!sidebarOpen);
-    };
+    setSidebarOpen(!sidebarOpen);
+  };
 
   const navigation = [
     { path: '/', label: 'Dashboard', icon: IconDashboard },
@@ -61,7 +61,7 @@ export function Layout() {
             </Group>
 
           </Group>
-          
+
           <Menu shadow="md" width={200}>
             <Menu.Target>
               <Button variant="subtle" p="xs">
@@ -92,123 +92,138 @@ export function Layout() {
         </Group>
       </AppShell.Header>
 
-<AppShell.Navbar p="md">
-  <AppShell.Section grow>
-    {/* FishHealth dropdown manually declared */}
-    <NavLink
-      label="Dashboard"
-      leftSection={<IconDashboard size={20} />}
-      component={Link}
-      active={location.pathname === '/'}
-      to="/"
-      mb="xs"
-    />
-    <NavLink
-      label="Fiskehelse & Velferd"
-      leftSection={<IconChartBar size={20} />}
-      childrenOffset={16}
-      defaultOpened={location.pathname.startsWith('/fishhealth')}
-      mb="xs"
-    >
-      <NavLink
-        component={Link}
-        to="/fishhealth/overview"
-        label="Oversikt"
-        active={location.pathname === '/fishhealth/overview'}
-      />
-      <NavLink
-        component={Link}
-        to="/fishhealth/benchmark"
-        label="Benchmark"
-        active={location.pathname === '/fishhealth/benchmark'}
-      />
-      <NavLink
-        component={Link}
-        to="/fishhealth/trend"
-        label="Trender"
-        active={location.pathname === '/fishhealth/trend'}
-      />
-      <NavLink
-        component={Link}
-        to="/fishhealth/handling"
-        label="Håndtering"
-        active={location.pathname === '/fishhealth/handling'}
-      />
-      <NavLink
-        component={Link}
-        to="/fishhealth/codelist"
-        label="Kodeliste"
-        active={location.pathname === '/fishhealth/codelist'}
-      />
-    </NavLink>
-     <NavLink
-      label="Produksjon"
-      leftSection={<IconBuildingFactory size={20} />}
-      childrenOffset={16}
-      defaultOpened={location.pathname.startsWith('/production')}
-      mb="xs"
-    >
-      <NavLink
-        component={Link}
-        to="/production/sfr"
-        label="Utforing/SFR"
-        active={location.pathname === '/production/sfr'}
-      />
-    </NavLink>
-    <NavLink
-      label="Lus"
-      leftSection={<IconBug size={20} />}
-      component={Link}
-      active={location.pathname === '/lice'}
-      to="/lice"
-      mb="xs"
-    />
-    <NavLink
-      label="Temperature"
-      leftSection={<IconTemperature size={20} />}
-      component={Link}
-      active={location.pathname === '/temperature'}
-      to="/temperature"
-      mb="xs"
-    />
-    <NavLink
-      label="Farm Map"
-      leftSection={<IconMap size={20} />}
-      component={Link}
-      active={location.pathname === '/map'}
-      to="/map"
-      mb="xs"
-    />
-    <NavLink
-      label="Reports"
-      leftSection={<IconReport size={20} />}
-      component={Link}
-      active={location.pathname === '/reports'}
-      to="/reports"
-      mb="xs"
-    />
-    <NavLink
-      label="Settings"
-      leftSection={<IconSettings size={20} />}
-      component={Link}
-      active={location.pathname === '/settings'}
-      to="/settings"
-      mb="xs"
-    />
-  </AppShell.Section>
+      <AppShell.Navbar p="md">
+        <AppShell.Section grow>
+          {/* FishHealth dropdown manually declared */}
+          <NavLink
+            label="Dashboard"
+            leftSection={<IconDashboard size={20} />}
+            component={Link}
+            active={location.pathname === '/'}
+            to="/"
+            mb="xs"
+          />
+          <NavLink
+            label="Fiskehelse & Velferd"
+            leftSection={<IconChartBar size={20} />}
+            childrenOffset={16}
+            defaultOpened={location.pathname.startsWith('/fishhealth')}
+            mb="xs"
+          >
+            <NavLink
+              component={Link}
+              to="/fishhealth/overview"
+              label="Oversikt"
+              active={location.pathname === '/fishhealth/overview'}
+              style={{
+                opacity: 0.5,
+              }}
+            />
+            <NavLink
+              component={Link}
+              to="/fishhealth/benchmark"
+              label="Benchmark"
+              active={location.pathname === '/fishhealth/benchmark'}
+            />
+            <NavLink
+              component={Link}
+              to="/fishhealth/trend"
+              label="Trender"
+              active={location.pathname === '/fishhealth/trend'}
+            />
+            <NavLink
+              component={Link}
+              to="/fishhealth/handling"
+              label="Håndtering"
+              active={location.pathname === '/fishhealth/handling'}
+              style={{
+                opacity: 0.5,
+              }}
+            />
+            <NavLink
+              component={Link}
+              to="/fishhealth/codelist"
+              label="Kodeliste"
+              active={location.pathname === '/fishhealth/codelist'}
+            />
+          </NavLink>
+          <NavLink
+            label="Produksjon"
+            leftSection={<IconBuildingFactory size={20} />}
+            childrenOffset={16}
+            defaultOpened={location.pathname.startsWith('/production')}
+            mb="xs"
+            style={{
+              opacity: 0.5,
+            }}
+          >
+            <NavLink
+              component={Link}
+              to="/production/sfr"
+              label="Utforing/SFR"
+              active={location.pathname === '/production/sfr'}
+              style={{
+                opacity: 0.5,
+              }}
+            />
+          </NavLink>
+          <NavLink
+            label="Lus (under utvikling)"
+            leftSection={<IconBug size={20} />}
+            component={Link}
+            active={location.pathname === '/lice'}
+            to="/lice"
+            mb="xs"
+            style={{
+              opacity: 0.5,
+            }}
+          />
+          <NavLink
+            label="Temperature"
+            leftSection={<IconTemperature size={20} />}
+            component={Link}
+            active={location.pathname === '/temperature'}
+            to="/temperature"
+            mb="xs"
+          />
+          <NavLink
+            label="Farm Map"
+            leftSection={<IconMap size={20} />}
+            component={Link}
+            active={location.pathname === '/map'}
+            to="/map"
+            mb="xs"
+          />
+          <NavLink
+            label="Reports"
+            leftSection={<IconReport size={20} />}
+            component={Link}
+            active={location.pathname === '/reports'}
+            to="/reports"
+            mb="xs"
+          />
+          <NavLink
+            label="Settings"
+            leftSection={<IconSettings size={20} />}
+            component={Link}
+            active={location.pathname === '/settings'}
+            to="/settings"
+            mb="xs"
+          />
+        </AppShell.Section>
 
-  {user?.farmerId && (
-    <AppShell.Section>
-      <Text size="xs" c="dimmed">
-        Farmer ID: {user.email}
-      </Text>
-    </AppShell.Section>
-  )}
-</AppShell.Navbar>
-<FilterSidebar
-  isOpen={sidebarOpen}
-  onToggle={toggleSidebar}
-/>
+        {user?.farmerId && (
+          <AppShell.Section>
+            <Text size="xs" c="dimmed">
+              Farmer ID: {user.email}
+            </Text>
+          </AppShell.Section>
+        )}
+      </AppShell.Navbar>
+      <FilterSidebar
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+      />
 
 
       <AppShell.Main>

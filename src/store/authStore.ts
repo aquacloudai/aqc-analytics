@@ -33,12 +33,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   setIsLoading: (isLoading) => set({ isLoading }),
   logout: async () => {
-    if (isAuthEnabled) {
-      await keycloak.logout();
-    } else {
-      // For mock auth, just clear the state
-      console.log('Mock logout - clearing auth state');
-    }
-    set({ user: null, isAuthenticated: false });
-  },
-}));
+      set({
+        user: null,
+        isAuthenticated: false,
+        keycloakReady: false,
+      });
+
+      try {
+        await keycloak.logout({
+          redirectUri: window.location.origin,
+        });
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    },
+  }));
