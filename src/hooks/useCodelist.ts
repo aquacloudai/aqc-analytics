@@ -2,17 +2,16 @@ import { useEffect, useState } from 'react';
 import api from '../api/auth/apiClient';
 
 import type { Codelist } from '../types/codelist';
-import { useKeycloakReady } from './useKeycloakReady';
+import { isKeycloakReady } from '../config/keycloak';
 
 
 export function useCodelist() {
   const [data, setData] = useState<Codelist[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const ready = useKeycloakReady();
+  const [error, setError] = useState<string | null>(null); 
 
   useEffect(() => {
-    if (!ready) return;
+    if (!isKeycloakReady) return;
 
     const fetch = async () => {
       setLoading(true);
@@ -29,7 +28,7 @@ export function useCodelist() {
     };
 
     fetch();
-  }, [ready]);
+  }, [isKeycloakReady]);
 
   return { data, loading, error };
 }
