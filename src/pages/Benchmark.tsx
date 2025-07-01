@@ -1,7 +1,14 @@
-import { Grid, Paper, Stack, Flex, Select, SegmentedControl } from '@mantine/core';
+import {
+  Grid,
+  Paper,
+  Stack,
+  Flex,
+  MultiSelect,
+  SegmentedControl,
+} from '@mantine/core';
 import { useLossByGeneration } from '../hooks/useLossByGeneration';
 import { LineChart } from 'aqc-charts';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { LossMortalityGenerationRate } from '../types/loss_mortality_generation_rate';
 
 const metricMap = {
@@ -25,9 +32,10 @@ const metricMap = {
 export function Benchmark() {
   const { data: lossByGeneration, loading, error } = useLossByGeneration();
 
-  const [generation, setGeneration] = useState<string | null>(null);
+  const [selectedGenerations, setSelectedGenerations] = useState<string[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'loss' | 'mortality' | 'culling'>('loss');
-  const [period, setPeriod] = useState<'month' | 'generation_month_number'>('month');
+  const [xAxisMode, setXAxisMode] = useState<'relative' | 'calendar'>('relative');
+  const [initialized, setInitialized] = useState(false);
 
   const generations = useMemo(() => {
     if (!lossByGeneration) return [];
@@ -35,52 +43,123 @@ export function Benchmark() {
     return unique.map((g) => ({ value: g, label: g }));
   }, [lossByGeneration]);
 
-  const filtered = useMemo(() => {
-    return generation
-      ? lossByGeneration?.filter((d) => d.generation === generation) ?? []
-      : [];
-  }, [lossByGeneration, generation]);
+  useEffect(() => {
+    if (!initialized && generations.length > 0 && selectedGenerations.length === 0) {
+      const hasH2024 = generations.some((g) => g.value === 'H2024');
+      setSelectedGenerations([hasH2024 ? 'H2024' : generations[0].value]);
+      setInitialized(true);
+    }
+  }, [generations, initialized, selectedGenerations.length]);
 
-  const labels = filtered.map((d) =>
-    period === 'month' ? d.loss_rate_month : d.generation_month_number.toString()
-  );
+  const filtered = useMemo(() => {
+    return selectedGenerations.length > 0
+      ? lossByGeneration?.filter((d) => selectedGenerations.includes(d.generation)) ?? []
+      : [];
+  }, [lossByGeneration, selectedGenerations]);
 
   const { aqua, farmer, label } = metricMap[selectedMetric];
 
-  const chartData = filtered.map((d) => {
-    const label = period === 'month' ? d.loss_rate_month : d.generation_month_number.toString();
-    const aquaValue = d[aqua as keyof LossMortalityGenerationRate];
-    const farmerValue = d[farmer as keyof LossMortalityGenerationRate];
+  const maxMonth = useMemo(() => {
+    if (filtered.length === 0) return 0;
+    return Math.max(...filtered.map((d) => d.generation_month_number));
+  }, [filtered]);
 
-    const point: Record<string, string | number> = { label };
+const categories = useMemo(() => {
+  if (xAxisMode === 'calendar') {
+    if (filtered.length === 0) return [];
+    
+    const sorted = [...filtered].sort((a, b) => a.generation_month_number - b.generation_month_number);
+    const seen = new Set();
+    
+    return sorted
+      .map(d => {
+        if (!d.loss_rate_month) {
+          console.warn('Missing loss_rate_month data:', d);
+          return null;
+        }
+        
+        // Extract year and month from loss_rate_month
+        const date = new Date(d.loss_rate_month);
+        if (isNaN(date.getTime())) {
+          console.warn('Invalid date in loss_rate_month:', d.loss_rate_month);
+          return null;
+        }
+        
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1; // getMonth() returns 0-11, so add 1
+        const key = `${year}-${String(month).padStart(2, '0')}`;
+        
+        if (seen.has(key)) return null;
+        seen.add(key);
+        return key;
+      })
+      .filter(Boolean) as string[];
+  }
 
-    if (typeof aquaValue === 'number') {
-      point['AquaCloud'] = +(aquaValue * 100).toFixed(2);
-    }
-    if (typeof farmerValue === 'number') {
-      point['Oppdretter'] = +(farmerValue * 100).toFixed(2);
-    }
+  return Array.from({ length: maxMonth + 1 }, (_, i) => i.toString());
+}, [xAxisMode, filtered, maxMonth]);
 
-    return point;
+const chartSeries = useMemo(() => {
+  if (selectedGenerations.length === 0) return [];
+
+  const series: Array<{ name: string; type: string; data: number[] }> = [];
+
+  selectedGenerations.forEach((generation) => {
+    const generationData = filtered.filter((d) => d.generation === generation);
+
+    const aquaData = categories.map((xValue) => {
+      const dataPoint =
+        xAxisMode === 'calendar'
+          ? generationData.find((d) => {
+              if (!d.loss_rate_month) return false;
+              const date = new Date(d.loss_rate_month);
+              if (isNaN(date.getTime())) return false;
+              const year = date.getFullYear();
+              const month = date.getMonth() + 1;
+              const key = `${year}-${String(month).padStart(2, '0')}`;
+              return key === xValue;
+            })
+          : generationData.find(
+              (d) => d.generation_month_number === parseInt(xValue)
+            );
+      const aquaValue = dataPoint?.[aqua as keyof LossMortalityGenerationRate];
+      return typeof aquaValue === 'number' ? +(aquaValue * 100).toFixed(2) : 0;
+    });
+
+    const farmerData = categories.map((xValue) => {
+      const dataPoint =
+        xAxisMode === 'calendar'
+          ? generationData.find((d) => {
+              if (!d.loss_rate_month) return false;
+              const date = new Date(d.loss_rate_month);
+              if (isNaN(date.getTime())) return false;
+              const year = date.getFullYear();
+              const month = date.getMonth() + 1;
+              const key = `${year}-${String(month).padStart(2, '0')}`;
+              return key === xValue;
+            })
+          : generationData.find(
+              (d) => d.generation_month_number === parseInt(xValue)
+            );
+      const farmerValue = dataPoint?.[farmer as keyof LossMortalityGenerationRate];
+      return typeof farmerValue === 'number' ? +(farmerValue * 100).toFixed(2) : 0;
+    });
+
+    series.push({
+      name: `${generation} - AquaCloud`,
+      type: 'line',
+      data: aquaData,
+    });
+
+    series.push({
+      name: `${generation} - Oppdretter`,
+      type: 'line',
+      data: farmerData,
+    });
   });
 
-  const chartSeries = [
-    {
-      name: 'AquaCloud',
-      type: 'line',
-      data: chartData.map(d => d.AquaCloud),
-    },
-    {
-      name: 'Oppdretter',
-      type: 'line',
-      data: chartData.map(d => d.Oppdretter),
-    },
-  ];
-
-
-  console.log('chartData:', chartData);
-  console.log('chartSeries:', chartSeries);
-
+  return series;
+}, [selectedGenerations, filtered, categories, aqua, farmer, xAxisMode]);
 
   if (loading) return <Paper p="md">Laster data...</Paper>;
   if (error) return <Paper p="md">Feil: {error}</Paper>;
@@ -89,13 +168,15 @@ export function Benchmark() {
     <Stack gap="lg">
       <Paper p="md" radius="md" withBorder>
         <Flex gap="lg" align="center" wrap="wrap">
-          <Select
-            label="Generasjon"
-            placeholder="Velg generasjon"
+          <MultiSelect
+            label="Generasjoner"
+            placeholder="Velg generasjoner"
             data={generations}
-            value={generation}
-            onChange={setGeneration}
-            w={180}
+            value={selectedGenerations}
+            onChange={setSelectedGenerations}
+            w={280}
+            searchable
+            clearable
           />
           <SegmentedControl
             value={selectedMetric}
@@ -107,11 +188,11 @@ export function Benchmark() {
             ]}
           />
           <SegmentedControl
-            value={period}
-            onChange={(value) => setPeriod(value as typeof period)}
+            value={xAxisMode}
+            onChange={(value) => setXAxisMode(value as 'relative' | 'calendar')}
             data={[
-              { label: 'Per måned', value: 'month' },
-              { label: 'Måneder siden utsett', value: 'generation_month_number' },
+              { label: 'Måneder siden utsett', value: 'relative' },
+              { label: 'Kalendermåneder', value: 'calendar' },
             ]}
           />
         </Flex>
@@ -119,36 +200,28 @@ export function Benchmark() {
 
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12 }}>
-          {generation && chartData.length > 0 ? (
+          {selectedGenerations.length > 0 && chartSeries.length > 0 ? (
             <LineChart
-              title="Test chart"
-              xAxis={['Jan', 'Feb']}
-              data={[
-                { label: 'Jan', AquaCloud: 1.2, Oppdretter: 1.1 },
-                { label: 'Feb', AquaCloud: 2.3, Oppdretter: 2.1 },
-              ]}
-              series={[
-                { name: 'AquaCloud', dataKey: 'AquaCloud' },
-                { name: 'Oppdretter', dataKey: 'Oppdretter' },
-              ]}
+              title={`${label} - ${xAxisMode === 'relative' ? 'Måneder siden utsett' : 'Kalendermåneder'}`}
+              data={{
+                categories: categories,
+                series: chartSeries,
+              }}
               unit="%"
-              height={300}
+              height={400}
+              xAxisTitle={xAxisMode === 'relative' ? 'Måned siden utsett' : 'Kalendermåned'}
+              yAxisTitle={label}
             />
-
           ) : (
             <Paper p="md" radius="md" withBorder>
               <div>
-                {!generation
-                  ? 'Velg en generasjon for å vise data.'
-                  : 'Ingen data for valgt generasjon.'}
+                {selectedGenerations.length === 0
+                  ? 'Velg minst én generasjon for å vise data.'
+                  : 'Ingen data for valgte generasjoner.'}
               </div>
             </Paper>
           )}
         </Grid.Col>
-
-
-
-
       </Grid>
     </Stack>
   );

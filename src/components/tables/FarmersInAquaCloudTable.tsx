@@ -17,15 +17,15 @@ interface Props {
 export function FarmersInAquaCloudTable({ farmers }: Props) {
   return (
     <Paper p="md" radius="md" withBorder>
-      <Title order={4} mb="md">Farmers in AquaCloud</Title>
+      <Title order={4} mb="md">Oppdrettere i AquaCloud</Title>
       <ScrollArea h={300}>
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Name</Table.Th>
-              <Table.Th>Region(s)</Table.Th>
+              <Table.Th>Navn</Table.Th>
+              <Table.Th>Region(er)</Table.Th>
               <Table.Th>PO</Table.Th>
-              <Table.Th>Active</Table.Th>
+              <Table.Th>Aktiv</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>

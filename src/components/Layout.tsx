@@ -13,7 +13,10 @@ import {
   IconFilter,
   IconTemperature,
   IconBug,
-  IconBuildingFactory
+  IconBuildingFactory,
+  IconInfoCircle,
+  IconPoint,
+  IconPin
 } from '@tabler/icons-react';
 import { FilterSidebar } from './FilterSidebar';
 import { useState } from 'react';
@@ -195,11 +198,27 @@ export function Layout() {
             mb="xs"
           />
           <NavLink
+            label="Sites"
+            leftSection={<IconPin size={20} />}
+            component={Link}
+            active={location.pathname === '/sites'}
+            to="/sites"
+            mb="xs"
+          />
+          <NavLink
             label="Reports"
             leftSection={<IconReport size={20} />}
             component={Link}
             active={location.pathname === '/reports'}
             to="/reports"
+            mb="xs"
+          />
+          <NavLink
+            label="Om AquaCloud"
+            leftSection={<IconInfoCircle size={20} />}
+            component={Link}
+            active={location.pathname === '/about'}
+            to="/about"
             mb="xs"
           />
           <NavLink

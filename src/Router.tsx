@@ -11,6 +11,11 @@ import { Trends } from './pages/Trends';
 // Fish health subpages
 import { Codelist } from './pages/Codelist';
 import { Benchmark } from './pages/Benchmark';
+import { OmaquaCloud } from './pages/OmAquacloud';
+import { Sites } from './pages/Sites';
+import { Site } from './pages/Site'; // create this page
+
+
 
 const router = createBrowserRouter([
   {
@@ -35,6 +40,16 @@ const router = createBrowserRouter([
       { path: 'filters', element: <Filters /> },
       { path: 'settings', element: <Settings /> },
       { path: 'temperature', element: <Temperature /> },
+      { path: 'about', element: <OmaquaCloud /> },
+      {
+        path: 'sites',
+        element: <Outlet />, // wrapper for list and detail
+        children: [
+          { index: true, element: <Sites /> }, // /sites
+          { path: ':site_id', element: <Site /> }, // /sites/:site_id
+        ],
+      }
+
     ],
   },
 ]);

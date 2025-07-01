@@ -24,34 +24,72 @@ export function MortalityCategoryPieChart({
 }: Props) {
 
   const pieChartData: ChartDataPoint[] = (() => {
-    const grouped = new Map<string, number>();
+    const grouped = new Map<string, { label: string; value: number }>();
 
     data.forEach(item => {
       let key: string;
+      let label: string;
+
       switch (grouping) {
         case 'level1':
           key = item.category_level_1_name;
+          label = item.category_level_1_name;
           break;
         case 'code':
-          key = item.loss_category_code[0];
+          key = item.loss_category_code;
+          label = `${item.loss_category_code} - ${item.category_short_name}`;
           break;
         case 'category':
           key = item.category_short_name;
+          label = item.category_short_name;
           break;
         default:
           key = item.category_level_1_name;
+          label = item.category_level_1_name;
       }
 
       const value = item[selectedMetric] as number;
-      grouped.set(key, (grouped.get(key) || 0) + (value ?? 0));
+      if (!value || value === 0) return; // ❗ Skip zero values
+
+      if (grouped.has(key)) {
+        grouped.get(key)!.value += value;
+      } else {
+        grouped.set(key, { label, value });
+      }
     });
 
-    return Array.from(grouped.entries()).map(([name, value], i) => ({
-      name,
-      value,
-      color: CHART_COLORS[i % CHART_COLORS.length],
-    }));
+    const all = Array.from(grouped.values());
+    const total = all.reduce((sum, { value }) => sum + value, 0);
+
+    const mainItems: ChartDataPoint[] = [];
+    let otherTotal = 0;
+
+    all.forEach(({ label, value }, i) => {
+      const percentage = (value / total) * 100;
+
+      if (percentage < 0.3) {
+        otherTotal += value;
+      } else {
+        mainItems.push({
+          name: label,
+          value,
+          color: CHART_COLORS[mainItems.length % CHART_COLORS.length],
+        });
+      }
+    });
+
+    if (otherTotal > 0) {
+      mainItems.push({
+        name: 'Annet',
+        value: otherTotal,
+        color: '#cccccc', // Neutral gray for 'Other'
+      });
+    }
+
+    return mainItems;
   })();
+
+
 
   return (
     <Paper shadow="sm" p="md" h="100%">
@@ -63,12 +101,12 @@ export function MortalityCategoryPieChart({
         <PieChart
           data={pieChartData}
           showLegend
-          center={['50%', '50%']}
-          radius={['20%', '60%']}
+          center={['40%', '60%']}
+          radius={['30%', '80%']}
           legendOptions={{
             type: 'scroll',
             orient: 'vertical',
-            right: 20,
+            right: 30,
             top: 40,
             bottom: 20,
           }}
@@ -76,8 +114,9 @@ export function MortalityCategoryPieChart({
       </div>
 
       <Text size="xs" c="dimmed" mt="sm">
-        Viser fordeling av valgt måling for alle grupper.
+        Viser fordeling av valgt måling. Grupper under 0.3% er samlet som "Annet".
       </Text>
+
     </Paper>
   );
 }

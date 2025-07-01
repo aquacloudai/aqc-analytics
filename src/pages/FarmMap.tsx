@@ -14,6 +14,9 @@ import { useEffect, useState } from 'react';
 import api from '../api/auth/apiClient';
 import { isKeycloakReady } from '../config/keycloak';
 import type { Site } from '../types/site';
+import { GeoJSON } from 'react-leaflet';
+import { Switch } from '@mantine/core';
+
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -37,14 +40,28 @@ const getColorByMarineType = (typeName?: string | null) =>
 export function FarmMap() {
   const [sites, setSites] = useState<Site[]>([]);
   const [filteredSites, setFilteredSites] = useState<Site[]>([]);
+  const [marineLayer, setMarineLayer] = useState<any | null>(null);
+  const [onlyInAquaCloud, setOnlyInAquaCloud] = useState(false);
+
+
 
   const [selectedPlacement, setSelectedPlacement] = useState<string>('');
   const [selectedProductionArea, setSelectedProductionArea] = useState<string | null>(null);
 
   useEffect(() => {
+    fetch('/data/marine_typology_reduced.geojson')
+      .then((res) => res.json())
+      .then(setMarineLayer)
+      .catch((err) => console.error('[FarmMap] Failed to load marine layer:', err));
+  }, []);
+
+
+  useEffect(() => {
     if (!isKeycloakReady()) return;
     api
-      .get<{ data: Site[] }>('/v3/common/site')
+      .get<{ data: Site[] }>('/v3/common/site', {
+        params: { limit: 2000 },
+      })
       .then((res) => {
         const allSites = res.data?.data || [];
         setSites(allSites);
@@ -53,7 +70,6 @@ export function FarmMap() {
       .catch((err) => console.error('[FarmMap] Failed to fetch sites:', err));
   }, []);
 
-  // Filter logic
   useEffect(() => {
     let result = sites;
 
@@ -65,8 +81,13 @@ export function FarmMap() {
       result = result.filter((s) => s.production_area_name === selectedProductionArea);
     }
 
+    if (onlyInAquaCloud) {
+      result = result.filter((s) => s.is_in_aquacloud);
+    }
+
     setFilteredSites(result);
-  }, [selectedPlacement, selectedProductionArea, sites]);
+  }, [selectedPlacement, selectedProductionArea, onlyInAquaCloud, sites]);
+
 
   // Unique production areas for dropdown
   const productionAreas = Array.from(
@@ -85,6 +106,23 @@ export function FarmMap() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          {marineLayer && (
+            <GeoJSON
+              data={marineLayer}
+              style={(feature) => ({
+                color: '#000',
+                weight: 1,
+                fillColor: getColorByMarineType(feature?.properties?.marine_type_name),
+                fillOpacity: 0.5,
+              })}
+              onEachFeature={(feature, layer) => {
+                const name = feature?.properties?.name ?? 'Marine Area';
+                const type = feature?.properties?.marine_type_name ?? 'Unknown';
+                layer.bindPopup(`<strong>${name}</strong><br/>${type}`);
+              }}
+            />
+          )}
+
           {filteredSites.map((site) => (
             <CircleMarker
               key={site.site_id}
@@ -98,6 +136,9 @@ export function FarmMap() {
                 fillOpacity: 0.9,
               }}
             >
+
+
+
               <Popup>
                 <Stack gap="xs">
                   <Title order={6}>{site.site_name}</Title>
@@ -140,6 +181,13 @@ export function FarmMap() {
           value={selectedProductionArea}
           onChange={setSelectedProductionArea}
         />
+        <Switch
+          label="Vis kun AquaCloud"
+          checked={onlyInAquaCloud}
+          onChange={(event) => setOnlyInAquaCloud(event.currentTarget.checked)}
+        />
+
+
 
         <SegmentedControl
           value={selectedPlacement}
