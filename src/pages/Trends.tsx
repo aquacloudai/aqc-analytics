@@ -491,6 +491,15 @@ export function Trends() {
                                     title=""
                                     width="100%"
                                     height={500}
+                                    legend={
+                                        {
+                                            type: 'scroll',
+                                            orient: 'vertical',
+                                            right: 20,
+                                            top: 40,
+                                            bottom: 20,
+                                        }
+                                    }
                                     horizontal={showHorizontal}
                                     showValues={showValues}
                                 />
