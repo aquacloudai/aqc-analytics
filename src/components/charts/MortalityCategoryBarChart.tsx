@@ -1,0 +1,111 @@
+import { Paper, Text, Badge } from '@mantine/core';
+import { StackedBarChart } from 'aqc-charts';
+import type { MortalityCategoryRate } from '../../types/loss_mortality_category_rate';
+
+type ChartSeries = {
+    name: string;
+    data: number[];
+    color?: string;
+};
+
+type MortalityBarChartProps = {
+    chartData: {
+        categories: string[];
+        series: ChartSeries[];
+        metadata: {
+            periodTotals: Record<string, number>;
+            isFiltered: boolean;
+            filterCategory: string | null;
+            showAsPercentage: boolean;
+        };
+    };
+    selectedMetricLabel: string;
+    selectedLevel1Category: string | null;
+    showValues: boolean;
+    showHorizontal: boolean;
+    dataPointCount: number;
+};
+
+export function MortalityCategoryBarChart({
+    chartData,
+    selectedMetricLabel,
+    selectedLevel1Category,
+    showValues,
+    showHorizontal,
+    dataPointCount
+}: MortalityBarChartProps) {
+    return (
+        <Paper shadow="sm" p="md" h="100%">
+            <Text size="lg" fw={600} mb="md">
+                {selectedMetricLabel} – {selectedLevel1Category ? 'Subkategori distribusjon' : 'Trend over tid'}
+                {selectedLevel1Category && (
+                    <Badge variant="light" color="blue" ml="sm" size="sm">
+                        {selectedLevel1Category}
+                    </Badge>
+                )}
+            </Text>
+
+            <div style={{ height: '500px', width: '100%' }}>
+                <StackedBarChart
+                    data={chartData}
+                    height={500}
+                    grid={{
+                        top: 80,
+                        bottom: 80,
+                        left: 50,
+                        right: 30
+                    } as {
+                        top: number;
+                        bottom: number;
+                        left: number;
+                        right: number;
+                    }}
+                    yAxis={{
+                        max: 1,
+                        axisLabel: {
+                            formatter: (val: number) => `${(val * 100).toFixed(0)}%`
+                        }
+                    } as {
+                        max: number;
+                        axisLabel: {
+                            formatter: (val: number) => string;
+                        };
+                    }}
+                    tooltip={{
+                        trigger: 'axis',
+                        formatter: (params: Array<{ seriesName: string; value: number }>) =>
+                            params
+                                .map((p) => `${p.seriesName}: ${(p.value * 100).toFixed(2)}%`)
+                                .join('<br/>')
+                    } as {
+                        trigger: string;
+                        formatter: (params: Array<{ seriesName: string; value: number }>) => string;
+                    }}
+                    legend={{
+                        orient: 'horizontal',
+                        bottom: 0,
+                        textStyle: {
+                            fontSize: 12
+                        }
+                    } as {
+                        type: string;
+                        orient: string;
+                        bottom: number;
+                        textStyle: {
+                            fontSize: number;
+                        };
+                    }}
+                    showValues={showValues}
+                    horizontal={showHorizontal}
+                />
+
+            </div>
+
+            <Text size="xs" c="dimmed" mt="sm">
+                Basert på {dataPointCount} datapunkter.
+                {selectedLevel1Category && ` Viser subkategorier innenfor: ${selectedLevel1Category}.`}
+                Sist oppdatert: {new Date().toLocaleString('nb-NO')}
+            </Text>
+        </Paper>
+    );
+}

@@ -4,13 +4,11 @@ import {
     Text,
     Loader,
     Alert,
-    ScrollArea,
     Group,
     Stack,
     Button,
     Select,
     Switch,
-    Card,
     Grid,
     ActionIcon,
     Tooltip,
@@ -22,23 +20,20 @@ import {
     IconDownload,
     IconRefresh,
     IconSettings,
-    IconFilter,
     IconX
 } from '@tabler/icons-react';
 import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
-import { StackedBarChart } from 'aqc-charts';
 import { MortalityCategoryRateTable } from '../components/tables/LossMortalityCategoryRateTable';
 import { MortalityCategoryPieChart } from '../components/charts/MortalityCategoryPieChart';
 import { useMortalityCategoryRates } from '../hooks/useLossByCategory';
-import { formatPeriod, downloadChartData } from '../utils/downloadCSV';
+import { downloadChartData } from '../utils/downloadCSV';
 import { MortalitySankeyChart } from '../components/charts/MortalityCategorySankeyChart';
+import { MortalityCategoryBarChart } from '../components/charts/MortalityCategoryBarChart';
+
+import { generateChartData } from '../utils/LossMortalityChartData';
 
 
-const CHART_COLORS = [
-    '#5470c6', '#91cc75', '#fac858', '#ee6666',
-    '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
-    '#ea7ccc', '#2fc25b', '#ffc658', '#8884d8'
-];
+
 
 // Metric options for different views
 const METRIC_OPTIONS = [
@@ -69,9 +64,9 @@ export function Trends() {
     const { data: mortalityCategories, loading, error, refetch: fetchData } = useMortalityCategoryRates();
 
     // Chart configuration state
-    const [selectedMetric, setSelectedMetric] = useState<string>('loss_rate');
-    const [chartType, setChartType] = useState<string>('stacked');
-    const [grouping, setGrouping] = useState<string>('level1');
+    const [selectedMetric, setSelectedMetric] = useState<keyof MortalityCategoryRate>('loss_rate');
+    const [chartType, setChartType] = useState<'stacked' | 'grouped'>('stacked');
+    const [grouping, setGrouping] = useState<'level1' | 'code' | 'category'>('level1');
     const [showHorizontal, setShowHorizontal] = useState(false);
     const [showValues, setShowValues] = useState(false);
     const [showAsPercentage, setShowAsPercentage] = useState(false);
@@ -84,12 +79,19 @@ export function Trends() {
     const level1Categories = useMemo(() => {
         if (!mortalityCategories.length) return [];
 
-        const categories = [...new Set(mortalityCategories.map(item => item.category_level_1_name))]
-            .filter(Boolean)
-            .sort();
+        const uniqueCategories = new Map<string, string>(); // key: level_1_name, value: label
 
-        return categories.map(cat => ({ value: cat, label: cat }));
+        for (const item of mortalityCategories) {
+            if (item.category_level_1_name && item.category_label) {
+                uniqueCategories.set(item.category_level_1_name, item.category_label);
+            }
+        }
+
+        return Array.from(uniqueCategories.entries())
+            .sort((a, b) => a[1].localeCompare(b[1])) // sort by label
+            .map(([value, label]) => ({ value, label }));
     }, [mortalityCategories]);
+
 
     // Filter data based on selected Level 1 category
     const filteredMortalityCategories = useMemo(() => {
@@ -103,165 +105,50 @@ export function Trends() {
     }, [mortalityCategories, selectedLevel1Category]);
 
     const chartData = useMemo(() => {
-        if (!filteredMortalityCategories.length) return null;
-
-        // Debug logs
-        console.log('=== Chart Data Debug ===');
-        console.log('selectedLevel1Category:', selectedLevel1Category);
-        console.log('grouping:', grouping);
-        console.log('filteredMortalityCategories length:', filteredMortalityCategories.length);
-
-        const periods = [...new Set(filteredMortalityCategories.map(item => item.period))].sort();
-
-        let groups: string[] = [];
-        let getGroupKey: (item: MortalityCategoryRate) => string;
-        let getGroupName: (item: MortalityCategoryRate) => string;
-
-        // When a Level 1 category is selected, automatically show subcategories
-        if (selectedLevel1Category) {
-            console.log('Branch: Level 1 category selected - showing subcategories');
-            groups = [...new Set(filteredMortalityCategories.map(item => item.loss_category_code))];
-            getGroupKey = (item) => item.loss_category_code;
-            getGroupName = (item) => `${item.loss_category_code} - ${item.category_short_name}`;
-        } else {
-            console.log('Branch: No Level 1 category - using grouping:', grouping);
-            // Default behavior when no Level 1 category is selected
-            switch (grouping) {
-                case 'level1':
-                    console.log('Using level1 grouping');
-                    groups = [...new Set(filteredMortalityCategories.map(item => item.category_level_1_name))];
-                    getGroupKey = (item) => item.category_level_1_name;
-                    getGroupName = (item) => item.category_level_1_name;
-                    break;
-                case 'code':
-                    console.log('Using code grouping');
-                    groups = [...new Set(filteredMortalityCategories.map(item => item.loss_category_code))];
-                    getGroupKey = (item) => item.loss_category_code;
-                    getGroupName = (item) => `${item.loss_category_code} - ${item.category_short_name}`;
-                    break;
-                case 'category':
-                    console.log('Using category grouping');
-                    groups = [...new Set(filteredMortalityCategories.map(item => item.category_short_name))];
-                    getGroupKey = (item) => item.category_short_name;
-                    getGroupName = (item) => item.category_short_name;
-                    break;
-                default:
-                    console.log('Using default (level1) grouping');
-                    groups = [...new Set(filteredMortalityCategories.map(item => item.category_level_1_name))];
-                    getGroupKey = (item) => item.category_level_1_name;
-                    getGroupName = (item) => item.category_level_1_name;
-            }
-        }
-
-        console.log('Final groups:', groups);
-        console.log('=== End Chart Data Debug ===');
-
-        const periodTotals: Record<string, number> = {};
-
-        periods.forEach(period => {
-            const itemsForPeriod = filteredMortalityCategories.filter(item => item.period === period);
-            const total = itemsForPeriod.reduce((sum, item) => {
-                const value = item[selectedMetric as keyof MortalityCategoryRate] as number;
-                return sum + (value ?? 0);
-            }, 0);
-            periodTotals[period] = total;
-        });
-
-        // Step 1: Prepare base data per group per period
-        const rawGroupData: Record<string, number[]> = {};
-
-        groups.forEach(group => {
-            const data = periods.map(period => {
-                const relevantItems = filteredMortalityCategories.filter(item =>
-                    item.period === period && getGroupKey(item) === group
-                );
-                return relevantItems.reduce((sum, entry) => {
-                    const value = entry[selectedMetric as keyof MortalityCategoryRate] as number;
-                    return sum + (value ?? 0);
-                }, 0);
-            });
-            rawGroupData[group] = data;
-        });
-
-        // Step 2: Calculate total per period (already done in periodTotals)
-
-        // Step 3: Determine which groups to keep vs group as "Annet"
-        const otherGroupData = new Array(periods.length).fill(0);
-        const finalSeries = [];
-        const threshold = 0.3;
-
-        Object.entries(rawGroupData).forEach(([group, values], index) => {
-            const isBelowThreshold = values.every((value, i) => {
-                const total = periodTotals[periods[i]];
-                const percent = total > 0 ? (value / total) * 100 : 0;
-                return percent < threshold;
-            });
-
-            if (isBelowThreshold) {
-                values.forEach((v, i) => otherGroupData[i] += v);
-            } else {
-                const sampleItem = filteredMortalityCategories.find(item => getGroupKey(item) === group);
-                finalSeries.push({
-                    name: sampleItem ? getGroupName(sampleItem) : group,
-                    data: showAsPercentage
-                        ? values.map((v, i) =>
-                            periodTotals[periods[i]] > 0
-                                ? Number(((v / periodTotals[periods[i]]) * 100).toFixed(2))
-                                : 0
-                        )
-                        : values,
-                    color: CHART_COLORS[finalSeries.length % CHART_COLORS.length],
-                });
-            }
-        });
-
-        // Step 4: Add 'Annet' if applicable
-        if (otherGroupData.some(v => v > 0)) {
-            finalSeries.push({
-                name: 'Annet',
-                data: showAsPercentage
-                    ? otherGroupData.map((v, i) =>
-                        periodTotals[periods[i]] > 0
-                            ? Number(((v / periodTotals[periods[i]]) * 100).toFixed(2))
-                            : 0
-                    )
-                    : otherGroupData,
-                color: '#cccccc',
-            });
-        }
-
-        return {
-            categories: periods.map(formatPeriod),
-            series: finalSeries,
-            metadata: {
-                periodTotals,
-                isFiltered: !!selectedLevel1Category,
-                filterCategory: selectedLevel1Category,
-                showAsPercentage,
-            },
-        };
-    }, [filteredMortalityCategories, selectedMetric, grouping, selectedLevel1Category, showAsPercentage]);
+        // Group by subcategory code if Level 1 selected, otherwise by chosen grouping
+        const chartGrouping = selectedLevel1Category ? 'code' : grouping;
+        return generateChartData(
+            filteredMortalityCategories,
+            chartGrouping,
+            selectedMetric as keyof MortalityCategoryRate,
+            showAsPercentage
+        );
+    }, [
+        filteredMortalityCategories,
+        grouping,
+        selectedLevel1Category,
+        selectedMetric,
+        showAsPercentage
+    ]);
 
 
-
-
-    // Calculate summary statistics (now uses filtered data)
+    // Updated summary statistics to reflect percentage distribution
     const summaryStats = useMemo(() => {
         if (!filteredMortalityCategories.length) return null;
 
         const totalLoss = filteredMortalityCategories.reduce((sum, item) => sum + item.loss_count, 0);
         const totalMortality = filteredMortalityCategories.reduce((sum, item) => sum + item.mortality_count, 0);
         const totalCulling = filteredMortalityCategories.reduce((sum, item) => sum + item.culling_count, 0);
-        const avgLossRate = filteredMortalityCategories.reduce((sum, item) => sum + item.loss_rate, 0) / filteredMortalityCategories.length;
+
+        // Calculate weighted average rates
+        const totalFishForLoss = totalLoss > 0 ? totalLoss : 1;
+        const weightedLossRate = filteredMortalityCategories.reduce((sum, item) =>
+            sum + (item.loss_rate * item.loss_count), 0) / totalFishForLoss;
+
+        const totalFishForMortality = totalMortality > 0 ? totalMortality : 1;
+        const weightedMortalityRate = filteredMortalityCategories.reduce((sum, item) =>
+            sum + (item.mortality_rate * item.mortality_count), 0) / totalFishForMortality;
 
         return {
             totalLoss,
             totalMortality,
             totalCulling,
-            avgLossRate: avgLossRate.toFixed(2),
+            avgLossRate: weightedLossRate.toFixed(2),
+            avgMortalityRate: weightedMortalityRate.toFixed(2),
             totalCategories: new Set(filteredMortalityCategories.map(item => item.loss_category_code)).size,
             totalPeriods: new Set(filteredMortalityCategories.map(item => item.period)).size,
-            totalDataPoints: filteredMortalityCategories.length
+            totalDataPoints: filteredMortalityCategories.length,
+            distributionNote: 'Alle verdier vises som prosentandel av total per periode'
         };
     }, [filteredMortalityCategories]);
 
@@ -433,7 +320,7 @@ export function Trends() {
                         <Select
                             label="Måling"
                             value={selectedMetric}
-                            onChange={(value) => value && setSelectedMetric(value)}
+                            onChange={(value) => value && setSelectedMetric(value as keyof MortalityCategoryRate)}
                             data={METRIC_OPTIONS}
                         />
                     </Grid.Col>
@@ -442,7 +329,7 @@ export function Trends() {
                         <Select
                             label="Gruppering"
                             value={grouping}
-                            onChange={(value) => value && setGrouping(value)}
+                            onChange={(value) => value && setGrouping(value as 'level1' | 'code' | 'category')}
                             data={GROUPING_OPTIONS}
                             disabled={!!selectedLevel1Category}
                             description={selectedLevel1Category ? "Automatisk satt til subkategorier når Level 1 er valgt" : undefined}
@@ -453,7 +340,7 @@ export function Trends() {
                         <Select
                             label="Diagram type"
                             value={chartType}
-                            onChange={(value) => value && setChartType(value)}
+                            onChange={(value) => value && setChartType(value as 'stacked' | 'grouped')}
                             data={CHART_TYPE_OPTIONS}
                         />
                     </Grid.Col>
@@ -475,42 +362,15 @@ export function Trends() {
             {chartData && (
                 <Grid gutter="md" grow>
                     <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Paper shadow="sm" p="md" h="100%">
-                            <Text size="lg" fw={600} mb="md">
-                                {selectedMetricLabel} – {selectedLevel1Category ? 'Subkategori distribusjon' : 'Trend over tid'}
-                                {selectedLevel1Category && (
-                                    <Badge variant="light" color="blue" ml="sm" size="sm">
-                                        {selectedLevel1Category}
-                                    </Badge>
-                                )}
-                            </Text>
 
-                            <div style={{ height: '500px', width: '100%' }}>
-                                <StackedBarChart
-                                    data={chartData}
-                                    title=""
-                                    width="100%"
-                                    height={500}
-                                    legend={
-                                        {
-                                            type: 'scroll',
-                                            orient: 'vertical',
-                                            right: 20,
-                                            top: 40,
-                                            bottom: 20,
-                                        }
-                                    }
-                                    horizontal={showHorizontal}
-                                    showValues={showValues}
-                                />
-                            </div>
-
-                            <Text size="xs" c="dimmed" mt="sm">
-                                Basert på {filteredMortalityCategories.length} datapunkter.
-                                {selectedLevel1Category && ` Viser subkategorier innenfor: ${selectedLevel1Category}.`}
-                                Sist oppdatert: {new Date().toLocaleString('nb-NO')}
-                            </Text>
-                        </Paper>
+                        <MortalityCategoryBarChart
+                            chartData={chartData}
+                            selectedMetricLabel={selectedMetricLabel}
+                            selectedLevel1Category={selectedLevel1Category}
+                            showValues={showValues}
+                            showHorizontal={showHorizontal}
+                            dataPointCount={filteredMortalityCategories.length}
+                        />
                     </Grid.Col>
 
                     <Grid.Col span={{ base: 12, md: 6 }}>

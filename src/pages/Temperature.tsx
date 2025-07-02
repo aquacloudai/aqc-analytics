@@ -3,24 +3,39 @@ import {
   Paper,
   Title,
   Text,
+  Stack,
+  Checkbox,
+  ScrollArea,
   Box,
 } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import * as echarts from 'echarts/core';
+import { LineChart } from 'echarts/charts';
+import {
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  TitleComponent,
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
 import type { ProductionArea } from '../types/production_area';
 import type { TemperatureTrendData } from '../types/temperature_trend';
 import api from '../api/auth/apiClient';
 import { isKeycloakReady } from '../config/keycloak';
-import { LineChart } from 'aqc-charts';
-import type { ChartSeries, LegendConfig, TooltipConfig } from 'aqc-charts';
-import { FilterSidebar } from '../components/FilterSidebar';
+
+// Register necessary components
+echarts.use([
+  LineChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  TitleComponent,
+  CanvasRenderer,
+]);
 
 
 export function Temperature() {
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
-  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const [productionAreas, setProducionAreas] = useState<ProductionArea[]>([]);
   const [temperatureTrendData, setTemperatureTrendData] = useState<TemperatureTrendData[]>([]);
@@ -64,34 +79,14 @@ export function Temperature() {
     );
   };
 
-  const handleDateChange = (start: Date | null, end: Date | null) => {
-    setStartDate(start);
-    setEndDate(end);
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
   const chartData = useMemo(() => {
     if (selectedAreas.length === 0 || temperatureTrendData.length === 0) return null;
 
-    const series: ChartSeries[] = [];
+    const series: any[] = [];
     const colors = ['#FFD93D', '#6BCF7F', '#4D9DE0', '#E15554', '#F18F01'];
 
-    // Filter data by date range if dates are selected
-    let filteredData = temperatureTrendData;
-    if (startDate || endDate) {
-      filteredData = temperatureTrendData.filter(item => {
-        const itemDate = new Date(item.week);
-        if (startDate && itemDate < startDate) return false;
-        if (endDate && itemDate > endDate) return false;
-        return true;
-      });
-    }
-
     // Group temperature data by area and group (depth)
-    const groupedData = filteredData.reduce((acc, item) => {
+    const groupedData = temperatureTrendData.reduce((acc, item) => {
       const key = `${item.area_name}-${item.group}`;
       if (!acc[key]) {
         acc[key] = [];
@@ -101,7 +96,7 @@ export function Temperature() {
     }, {} as Record<string, TemperatureTrendData[]>);
 
     // Get all unique weeks/dates for x-axis
-    const allWeeks = Array.from(new Set(filteredData.map(item => item.week))).sort();
+    const allWeeks = Array.from(new Set(temperatureTrendData.map(item => item.week))).sort();
 
     selectedAreas.forEach((areaId, areaIndex) => {
       const area = productionAreas.find(a => a.area_id === areaId);
@@ -117,7 +112,7 @@ export function Temperature() {
       areaGroups.forEach((group, groupIndex) => {
         const key = `${area.area_name}-${group}`;
         const groupData = groupedData[key] || [];
-
+        
         // Sort by week and extract temperature values
         const sortedData = groupData.sort((a, b) => a.week.localeCompare(b.week));
         const temperatureValues = allWeeks.map(week => {
@@ -126,28 +121,31 @@ export function Temperature() {
         });
 
         // Determine line style based on group name
-        let lineType: 'solid' | 'dotted' | 'dashed' = 'solid';
-        let symbol: 'circle' | 'none' = 'none';
+        let lineStyle = 'solid';
+        let symbol = 'none';
         if (group.toLowerCase().includes('overflate') || group.toLowerCase().includes('surface')) {
-          lineType = 'dotted';
+          lineStyle = 'dotted';
           symbol = 'circle';
         } else if (group.toLowerCase().includes('dyp') || group.toLowerCase().includes('deep')) {
-          lineType = 'dashed';
+          lineStyle = 'dashed';
         }
 
         series.push({
           name: `${group} - ${area.area_name}`,
           type: 'line',
           data: temperatureValues,
-          color: colors[areaIndex % colors.length],
+          smooth: true,
+          connectNulls: false,
           lineStyle: {
-            type: lineType,
+            type: lineStyle,
             width: 2,
+            color: colors[areaIndex % colors.length],
+          },
+          itemStyle: {
+            color: colors[areaIndex % colors.length],
           },
           symbol: symbol,
           symbolSize: 4,
-          smooth: true,
-          connectNulls: false,
         });
       });
     });
@@ -161,16 +159,87 @@ export function Temperature() {
     });
 
     // Get date range for subtitle
-    const dateRange = allWeeks.length > 0
+    const dateRange = allWeeks.length > 0 
       ? `${allWeeks[0]} - ${allWeeks[allWeeks.length - 1]}`
       : '';
 
     return {
+
+      title: {
+        text: 'Temperaturutvikling per område og dybde',
+        subtext: dateRange,
+        left: 'left',
+        textStyle: {
+          fontSize: 18,
+          fontWeight: 'bold',
+        },
+        subtextStyle: {
+          fontSize: 12,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        formatter: (params: any) => {
+          let tooltip = `<div style="margin-bottom: 8px;"><strong>${params[0].axisValue}</strong></div>`;
+          params.forEach((param: any) => {
+            if (param.value !== null) {
+              tooltip += `<div style="margin: 4px 0;">
+                <span style="color: ${param.color};">●</span> 
+                ${param.seriesName}: <strong>${param.value}°C</strong>
+              </div>`;
+            }
+          });
+          return tooltip;
+        },
+      },
+      legend: {
+        type: 'scroll',
+        orient: 'vertical',
+        right: 10,
+        top: 20,
+        bottom: 20,
+      },
+      grid: {
+        left: '3%',
+        right: '20%',
+        bottom: '10%',
+        top: '15%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: xAxisData,
+        axisLabel: {
+          color: '#a0aec0',
+          rotate: 45,
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#4a5568',
+          },
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: 'Temperatur (°C)',
+        axisLabel: {
+          color: '#a0aec0',
+          formatter: '{value}°C'
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#4a5568',
+          },
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#2d3748',
+          },
+        },
+      },
       series,
-      xAxisData,
-      dateRange,
     };
-  }, [selectedAreas, temperatureTrendData, productionAreas, startDate, endDate]);
+  }, [selectedAreas, temperatureTrendData, productionAreas]);
 
   return (
     <Box style={{ height: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', background: '#1a365d' }}>
@@ -178,126 +247,45 @@ export function Temperature() {
         <Title order={1} c="white">Sjøtemperatur</Title>
       </Box>
 
-      <Box style={{ 
-        flex: 1, 
-        display: 'flex', 
-        padding: '0 1rem 1rem 1rem', 
-        paddingRight: (sidebarOpen && !isMobile) ? '340px' : '1rem', // Add space for fixed sidebar on desktop only
-        transition: 'padding-right 0.3s ease',
-      }}>
-        <FilterSidebar
-          isOpen={sidebarOpen}
-          onToggle={toggleSidebar}
-          productionAreas={productionAreas}
-          selectedAreas={selectedAreas}
-          onAreaToggle={handleAreaToggle}
-          startDate={startDate}
-          endDate={endDate}
-          onDateChange={handleDateChange}
-        />
-
+      <Box style={{ flex: 1, display: 'flex', padding: '0 1rem 1rem 1rem', gap: '1rem' }}>
         <Box style={{ flex: 1, minHeight: 0 }}>
           <Paper p="lg" radius="md" bg="dark.8" style={{ height: '100%' }}>
             {chartData ? (
-              <LineChart
-                data={chartData.series}
-                width="100%"
-                height="100%"
-                title={{
-                  text: 'Temperaturutvikling per område og dybde',
-                  subtext: chartData.dateRange,
-                  textStyle: {
-                    color: '#ffffff',
-                    fontSize: 18,
-                    fontWeight: 'bold',
-                  },
-                  subtextStyle: {
-                    color: '#a0aec0',
-                    fontSize: 12,
-                  },
-                  left: 'left',
-                }}
-                xAxis={{
-                  type: 'category',
-                  data: chartData.xAxisData,
-                  axisLabel: {
-                    color: '#a0aec0',
-                    rotate: 45,
-                  },
-                  axisLine: {
-                    lineStyle: {
-                      color: '#4a5568',
-                    },
-                  },
-                }}
-                yAxis={{
-                  type: 'value',
-                  name: 'Temperatur (°C)',
-                  nameTextStyle: {
-                    color: '#ffffff',
-                  },
-                  axisLabel: {
-                    color: '#a0aec0',
-                    formatter: '{value}°C'
-                  },
-                  axisLine: {
-                    lineStyle: {
-                      color: '#4a5568',
-                    },
-                  },
-                  splitLine: {
-                    lineStyle: {
-                      color: '#2d3748',
-                    },
-                  },
-                }}
-                legend={{
-                  type: 'scroll',
-                  orient: 'vertical',
-                  right: 10,
-                  top: 20,
-                  bottom: 20,
-                  textStyle: {
-                    color: '#ffffff',
-                  },
-                  pageTextStyle: {
-                    color: '#ffffff',
-                  },
-                }}
-                tooltip={{
-                  trigger: 'axis',
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                  borderColor: '#4a5568',
-                  textStyle: {
-                    color: '#ffffff',
-                  },
-                  formatter: (params: any) => {
-                    if (!Array.isArray(params)) return '';
-
-                    let tooltip = `<div style="margin-bottom: 8px;"><strong>${params[0].axisValue}</strong></div>`;
-                    params.forEach((param: any) => {
-                      if (param.value !== null) {
-                        tooltip += `<div style="margin: 4px 0;">
-                          <span style="color: ${param.color};">●</span> 
-                          ${param.seriesName}: <strong>${param.value}°C</strong>
-                        </div>`;
-                      }
-                    });
-                    return tooltip;
-                  },
-                }}
-                theme={{
-                  backgroundColor: '#1a365d',
-                  textStyle: {
-                    color: '#ffffff',
-                  },
-                }}
+              <ReactEChartsCore
+                echarts={echarts}
+                option={chartData}
+                style={{ height: '100%', width: '100%' }}
               />
             ) : (
               <Box ta="center" pt="xl">
                 <Text c="dimmed">Velg produksjonsområder for å vise temperaturdata</Text>
               </Box>
             )}
+          </Paper>
+        </Box>
+
+        <Box style={{ width: '300px', flexShrink: 0 }}>
+          <Paper p="md" radius="md" bg="dark.8" style={{ height: '100%' }}>
+            <Stack gap="md" style={{ height: '100%' }}>
+              <Title order={3} c="white" size="lg">Produksjonsområde</Title>
+
+              <ScrollArea style={{ flex: 1 }}>
+                <Stack gap="xs">
+                  {productionAreas.map((area) => (
+                    <Checkbox
+                      key={area.area_id}
+                      label={area.area_name}
+                      checked={selectedAreas.includes(area.area_id)}
+                      onChange={() => handleAreaToggle(area.area_id)}
+                      styles={{
+                        label: { color: 'black', fontSize: '14px' },
+                        input: { backgroundColor: 'transparent' },
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </ScrollArea>
+            </Stack>
           </Paper>
         </Box>
       </Box>

@@ -45,7 +45,14 @@ export function useMortalityCategoryRates() {
         }
       );
 
-      setData(response.data?.data || []);
+      const rawData = response.data?.data || [];
+
+      const enrichedData = rawData.map((item) => ({
+        ...item,
+        category_label: `${item.loss_category_code.charAt(0)} - ${item.category_level_1_name}`
+      }));
+
+      setData(enrichedData);
     } catch (err) {
       console.error('[useMortalityCategoryRates] Failed to fetch:', err);
       setError('Kunne ikke laste dødelighetskategorier. Vennligst prøv igjen.');

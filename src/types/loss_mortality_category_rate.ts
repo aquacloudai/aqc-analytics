@@ -22,4 +22,5 @@ export interface MortalityCategoryRate {
   category_name: string;
   category_short_name: string;
   category_level_1_name: string;
+  category_label?: string;
 }
