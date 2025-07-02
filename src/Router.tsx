@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { FarmMap } from './pages/FarmMap';
@@ -22,6 +23,8 @@ const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
+      { index: true, element: <Dashboard /> },
+
       { index: true, element: <Dashboard /> },
 
       {
@@ -57,3 +60,4 @@ const router = createBrowserRouter([
 export function Router() {
   return <RouterProvider router={router} />;
 }
+

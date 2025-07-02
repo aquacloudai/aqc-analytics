@@ -1,7 +1,12 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { AppShell, Burger, Group, NavLink, Button, Avatar, Menu, Text, Image } from '@mantine/core';
+import { AppShell, Burger, Group, NavLink, Button, Avatar, Menu, Text, Image } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuthStore } from '../store/authStore';
+import {
+  IconDashboard,
+  IconChartBar,
+  IconMap,
 import {
   IconDashboard,
   IconChartBar,
@@ -23,6 +28,11 @@ import { useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import logo from '../assets/logo.png';
 
+import { FilterSidebar } from './FilterSidebar';
+import { useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
+import logo from '../assets/logo.png';
+
 
 export function Layout() {
   const [opened, { toggle }] = useDisclosure();
@@ -34,9 +44,17 @@ export function Layout() {
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   const navigation = [
     { path: '/', label: 'Dashboard', icon: IconDashboard },
+    { path: '/fishhealth', label: 'Fiskehelse & Velferd', icon: IconChartBar },
+    { path: '/temperature', label: 'Temperature', icon: IconTemperature },
     { path: '/fishhealth', label: 'Fiskehelse & Velferd', icon: IconChartBar },
     { path: '/temperature', label: 'Temperature', icon: IconTemperature },
     { path: '/map', label: 'Farm Map', icon: IconMap },
@@ -48,7 +66,9 @@ export function Layout() {
   return (
     <AppShell
       header={{ height: 60 }}
+      header={{ height: 60 }}
       navbar={{
+        width: 300,
         width: 300,
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
@@ -61,7 +81,11 @@ export function Layout() {
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <Group gap="xs">
               <Image src={logo} alt="AquaCloud Logo" height={50} />
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+            <Group gap="xs">
+              <Image src={logo} alt="AquaCloud Logo" height={50} />
             </Group>
+
 
           </Group>
 
@@ -77,6 +101,33 @@ export function Layout() {
               </Button>
             </Menu.Target>
 
+          <Menu shadow="md" width={200}>
+            <Menu.Target>
+              <Button variant="subtle" p="xs">
+                <Group gap="xs">
+                  <Avatar size="sm" radius="xl">
+                    {user?.username?.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Text size="sm">{user?.username}</Text>
+                </Group>
+              </Button>
+            </Menu.Target>
+
+            <Menu.Dropdown>
+              <Menu.Label>Account</Menu.Label>
+              <Menu.Item leftSection={<IconUser size={16} />}>
+                Profile
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                color="red"
+                leftSection={<IconLogout size={16} />}
+                onClick={logout}
+              >
+                Logout
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
             <Menu.Dropdown>
               <Menu.Label>Account</Menu.Label>
               <Menu.Item leftSection={<IconUser size={16} />}>
@@ -231,14 +282,22 @@ export function Layout() {
           />
         </AppShell.Section>
 
+
         {user?.farmerId && (
           <AppShell.Section>
+            <Text size="xs" c="dimmed">
+              Farmer ID: {user.email}
             <Text size="xs" c="dimmed">
               Farmer ID: {user.email}
             </Text>
           </AppShell.Section>
         )}
       </AppShell.Navbar>
+      <FilterSidebar
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+      />
+
       <FilterSidebar
         isOpen={sidebarOpen}
         onToggle={toggleSidebar}
