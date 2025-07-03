@@ -10,19 +10,18 @@ import {
   IconSettings,
   IconLogout,
   IconUser,
-  IconFilter,
   IconTemperature,
   IconBug,
   IconBuildingFactory,
   IconInfoCircle,
-  IconPoint,
   IconPin
 } from '@tabler/icons-react';
 import { FilterSidebar } from './FilterSidebar';
 import { useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import logo from '../assets/logo.png';
-
+import { useFarmer } from '../hooks/useFarmer';
+import { Select } from '@mantine/core';
 
 export function Layout() {
   const [opened, { toggle }] = useDisclosure();
@@ -30,20 +29,13 @@ export function Layout() {
   const { user, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const { data: farmer, loading: farmerLoading, error: farmerError } = useFarmer();
+  const isAdmin = user?.roles.includes('aqc-admin');
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const navigation = [
-    { path: '/', label: 'Dashboard', icon: IconDashboard },
-    { path: '/fishhealth', label: 'Fiskehelse & Velferd', icon: IconChartBar },
-    { path: '/temperature', label: 'Temperature', icon: IconTemperature },
-    { path: '/map', label: 'Farm Map', icon: IconMap },
-    { path: '/reports', label: 'Reports', icon: IconReport },
-    { path: '/filters', label: 'Data Filters', icon: IconFilter },
-    { path: '/settings', label: 'Settings', icon: IconSettings },
-  ];
 
   return (
     <AppShell
@@ -65,18 +57,71 @@ export function Layout() {
 
           </Group>
 
-          <Menu shadow="md" width={200}>
+
+          <Menu shadow="md" width={220}>
             <Menu.Target>
-              <Button variant="subtle" p="xs">
-                <Group gap="xs">
-                  <Avatar size="sm" radius="xl">
+              <Button
+                variant="subtle"
+                p="xs"
+                style={{
+                  height: '100%',
+                  minWidth: 170,
+                  maxWidth: 240,
+                  paddingLeft: 8,
+                  paddingRight: 8,
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <Avatar size="sm" radius="xl" style={{ flexShrink: 0, marginRight: 8 }}>
                     {user?.username?.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Text size="sm">{user?.username}</Text>
-                </Group>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minWidth: 0,   // so ellipsis works
+                    flex: 1,
+                    height: '100%'
+                  }}>
+                    <Text
+                      size="sm"
+                      fw={600}
+                      c="dark"
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {user?.username}
+                    </Text>
+                    {farmerLoading ? (
+                      <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        Henter oppdretter...
+                      </Text>
+                    ) : farmerError ? (
+                      <Text size="xs" c="red" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {farmerError}
+                      </Text>
+                    ) : farmer?.name ? (
+                      <Text
+                        size="xs"
+                        c="dimmed"
+                        style={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {farmer.name}
+                      </Text>
+                    ) : null}
+                  </div>
+                </div>
               </Button>
-            </Menu.Target>
 
+
+            </Menu.Target>
             <Menu.Dropdown>
               <Menu.Label>Account</Menu.Label>
               <Menu.Item leftSection={<IconUser size={16} />}>
@@ -92,6 +137,9 @@ export function Layout() {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
+
+
+
         </Group>
       </AppShell.Header>
 
@@ -231,13 +279,17 @@ export function Layout() {
           />
         </AppShell.Section>
 
-        {user?.farmerId && (
-          <AppShell.Section>
-            <Text size="xs" c="dimmed">
-              Farmer ID: {user.email}
-            </Text>
-          </AppShell.Section>
-        )}
+        <AppShell.Section>
+          {isAdmin && (
+            <Select
+              label={"DEMO - Velg oppdretter"}
+              value={farmer?.name || ""}
+              onChange={(value, option) => console.log("woot", value, option)}
+              data={["Select a farmer"]}
+            />
+          )}
+        </AppShell.Section>
+
       </AppShell.Navbar>
       <FilterSidebar
         isOpen={sidebarOpen}

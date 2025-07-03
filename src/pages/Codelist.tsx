@@ -50,7 +50,7 @@ export function Codelist() {
       <Group justify="space-between" align="flex-end" mb="md">
         <div>
           <Title order={1}>
-            Kodelist
+            Kodeliste
             {codelist.length > 0 && (
               <Text size="sm" c="dimmed" component="span" ml="sm">
                 ({filteredCodelist.length} av {codelist.length})

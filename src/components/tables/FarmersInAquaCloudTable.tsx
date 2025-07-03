@@ -12,8 +12,6 @@ interface Props {
 }
 
 
-
-
 export function FarmersInAquaCloudTable({ farmers }: Props) {
   return (
     <Paper p="md" radius="md" withBorder>
@@ -32,8 +30,7 @@ export function FarmersInAquaCloudTable({ farmers }: Props) {
             {farmers.map((farmer, index) => (
               <Table.Tr key={index}>
                 <Table.Td>{farmer.name}</Table.Td>
-                <Table.Td>{farmer.region}</Table.Td>
-                <Table.Td>{farmer.po}</Table.Td>
+  
                 <Table.Td>
                   <Badge
                     color={farmer.active ? 'green' : 'red'}
