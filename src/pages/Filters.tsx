@@ -116,7 +116,7 @@ export function Filters() {
         <Paper p="md" radius="md" withBorder>
           <Title order={3} mb="md">Data Options</Title>
           <Stack>
-            {user?.farmerId && (
+            {user?.farmer_group_key && (
               <>
                 <Switch
                   label="Show only my farm's data"

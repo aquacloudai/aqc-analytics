@@ -20,13 +20,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             const profile = await keycloak.loadUserProfile();
             const tokenParsed = keycloak.tokenParsed as any;
+            
 
             setUser({
               id: profile.id || tokenParsed.sub,
               username: profile.username || '',
               email: profile.email || '',
               roles: tokenParsed.realm_access?.roles || [],
-              farmerId: tokenParsed.farmer_id,
+              farmer_group_key: tokenParsed.farmer_group_key,
             });
 
             setKeycloakReady(true);
