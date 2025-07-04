@@ -11,15 +11,16 @@ export function OmaquaCloud() {
   const statsList = [
     { label: 'Aktive oppdrettere', value: stats?.active_farmers },
     { label: 'Sjølokaliteter', value: stats?.offshore_sites },
+    { label: 'Settefisk', value: stats?.onshore_sites },
+    { label: 'Aquacloud', value: stats?.signed_farmers },
     { label: 'Nylig aktiv lokalitet', value: stats?.recently_active_sites },
   ];
 
+
   return (
     <Stack gap="lg">
-      <Title order={1}>AquaCloud – Oversikt</Title>
-
       <SimpleGrid
-        cols={{ base: 1, sm: 2, md: 3 }}
+        cols={{ base: 1, sm: 2, md: 5 }}
         spacing="lg"
       >
         {statsList.map(({ label, value }) => (
@@ -37,7 +38,9 @@ export function OmaquaCloud() {
       </Paper>
 
       <Paper withBorder p="md" radius="md">
-        <FarmersInAquaCloudTable farmers={farmers} />
+        
+       <FarmersInAquaCloudTable farmers={farmers} />
+
       </Paper>
     </Stack>
   );

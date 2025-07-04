@@ -1,5 +1,5 @@
 export interface Farmer {
-  id: string;
   name: string;
-  active: boolean;
+  number_of_farmers_in_dataset?: number | null;
+  is_active_with_data: boolean;
 }

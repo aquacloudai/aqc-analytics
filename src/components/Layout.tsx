@@ -22,6 +22,8 @@ import { useMediaQuery } from '@mantine/hooks';
 import logo from '../assets/logo.png';
 import { useFarmer } from '../hooks/useFarmer';
 import { Select } from '@mantine/core';
+import { useAdminFarmers } from '../hooks/useAdminFarmers';
+import { useAdminFarmerStore } from '../store/adminFarmerStore';
 
 export function Layout() {
   const [opened, { toggle }] = useDisclosure();
@@ -31,6 +33,10 @@ export function Layout() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { data: farmer, loading: farmerLoading, error: farmerError } = useFarmer();
   const isAdmin = user?.roles.includes('aqc-admin');
+
+  const { data: farmers, loading: farmersLoading, error: farmersError } = useAdminFarmers();
+
+  const { selectedFarmer, setSelectedFarmer, clearSelectedFarmer } = useAdminFarmerStore();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -278,17 +284,28 @@ export function Layout() {
             mb="xs"
           />
         </AppShell.Section>
-
         <AppShell.Section>
           {isAdmin && (
             <Select
-              label={"DEMO - Velg oppdretter"}
-              value={farmer?.name || ""}
-              onChange={(value, option) => console.log("woot", value, option)}
-              data={["Select a farmer"]}
+              label="DEMO - Velg oppdretter"
+              value={selectedFarmer}
+              onChange={setSelectedFarmer}
+              data={
+                farmersLoading
+                  ? []
+                  : (farmers || []).map((f) => ({
+                    value: f.farmer_group_key,
+                    label: f.name,
+                  }))
+              }
+              placeholder={farmersLoading ? "Laster..." : "Velg oppdretter"}
+              error={farmersError && "Feil ved lasting av oppdrettere"}
+              searchable
+              disabled={farmersLoading}
             />
           )}
         </AppShell.Section>
+
 
       </AppShell.Navbar>
       <FilterSidebar

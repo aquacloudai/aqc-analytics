@@ -7,7 +7,7 @@ interface User {
   username: string;
   email: string;
   roles: string[];
-  farmerId?: string;
+  farmer_group_key?: string;
 }
 
 interface AuthState {
