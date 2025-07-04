@@ -17,6 +17,45 @@ interface Props {
 
 dayjs.locale('nb');
 
+const formatPeriod = (period: string): string => {
+  // Just a year: "2024"
+  if (/^\d{4}$/.test(period)) return period;
+
+  // Quarter: "2024-Q2"
+  if (/^\d{4}-Q\d$/.test(period)) {
+    const [year, quarter] = period.split('-');
+    return `Kvartal ${quarter.replace('Q', '')} ${year}`;
+  }
+
+  // Tertial: "2024-T2"
+  if (/^\d{4}-T\d$/.test(period)) {
+    const [year, tertial] = period.split('-');
+    return `Tertial ${tertial.replace('T', '')} ${year}`;
+  }
+
+  // Tertial with space and .0: "2024 T2.0"
+  if (/^\d{4} T\d\.0$/.test(period)) {
+    const [year, tertialRaw] = period.split(' ');
+    const tertial = tertialRaw.replace('T', '').replace('.0', '');
+    return `${year} T${tertial}`;
+  }
+
+  // Year-Month: "2024-05"
+  if (/^\d{4}-\d{2}$/.test(period)) {
+    return dayjs(period + '-01').format('MMM YYYY');
+  }
+
+  // Fallback to just displaying as month-year if possible
+  if (dayjs(period).isValid()) {
+    return dayjs(period).format('MMM YYYY');
+  }
+
+  // Otherwise, just show as is
+  return period;
+};
+
+
+
 const formatAndel = (num: number | null | undefined): string => {
   if (num == null) return '–';
   return `${(num * 100).toFixed(1)}%`;
@@ -27,9 +66,6 @@ const formatNoDecimals = (num: number | null | undefined): string => {
   return Math.round(num).toLocaleString('no-NO');
 };
 
-const formatPeriod = (period: string): string => {
-  return dayjs(period).format('MMM YYYY');
-};
 
 export function MortalityCategoryRateTable({ mortalityCategoryRates }: Props) {
   return (

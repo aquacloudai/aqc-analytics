@@ -1,7 +1,6 @@
+import api from '../api/auth/apiClient';
 import { useEffect, useState } from 'react';
-import { fetchFarmers } from '../api/common/fetchFarmers';
 import type { Farmer } from '../types/farmer';
-import { isKeycloakReady } from '../config/keycloak';
 
 export function useFarmers(): {
   data: Farmer[];
@@ -14,23 +13,24 @@ export function useFarmers(): {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    if (!isKeycloakReady()) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchFarmers();
-      setData(res);
+      const res = await api.get('/v3/common/farmers-in-aquacloud');
+      const raw = res.data.data;
+      let farmersArr = [];
+      if (Array.isArray(raw)) farmersArr = raw;
+      else if (raw && Array.isArray(raw.items)) farmersArr = raw.items;
+      else farmersArr = [];
+      setData(farmersArr);
     } catch (err) {
-      console.error('[Farmers] Failed to fetch:', err);
-      setError('Kunne ikke laste bønder');
+      setError('Kunne ikke laste oppdrettere');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   return { data, loading, error, refetch: fetchData };
 }

@@ -12,7 +12,9 @@ interface Props {
 }
 
 
-export function FarmersInAquaCloudTable({ farmers }: Props) {
+
+export function FarmersInAquaCloudTable({ farmers = [] }: Props) {
+
   return (
     <Paper p="md" radius="md" withBorder>
       <Title order={4} mb="md">Oppdrettere i AquaCloud</Title>
@@ -27,17 +29,19 @@ export function FarmersInAquaCloudTable({ farmers }: Props) {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {farmers.map((farmer, index) => (
+            {(farmers).map((farmer, index) => (
               <Table.Tr key={index}>
                 <Table.Td>{farmer.name}</Table.Td>
-  
+                {/* TODO: Fill in Region(er) and PO, as needed */}
+                <Table.Td>-</Table.Td>
+                <Table.Td>-</Table.Td>
                 <Table.Td>
                   <Badge
-                    color={farmer.active ? 'green' : 'red'}
+                    color={farmer.is_active_with_data ? 'green' : 'red'}
                     size="sm"
                     variant="light"
                   >
-                    {farmer.active ? '✓' : '✗'}
+                    {farmer.is_active_with_data ? '✓' : '✗'}
                   </Badge>
                 </Table.Td>
               </Table.Tr>
@@ -48,3 +52,4 @@ export function FarmersInAquaCloudTable({ farmers }: Props) {
     </Paper>
   );
 }
+

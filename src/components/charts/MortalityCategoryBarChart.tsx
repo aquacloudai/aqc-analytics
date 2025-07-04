@@ -17,6 +17,7 @@ type MortalityBarChartProps = {
             isFiltered: boolean;
             filterCategory: string | null;
             showAsPercentage: boolean;
+            isRateMetric: boolean;
         };
     };
     selectedMetricLabel: string;
@@ -34,6 +35,50 @@ export function MortalityCategoryBarChart({
     showHorizontal,
     dataPointCount
 }: MortalityBarChartProps) {
+    // Detect if the current metric is a rate (percentage)
+    const isRateMetric = chartData?.metadata?.isRateMetric ?? false;
+
+    // For antall, calculate a dynamic max for yAxis
+    const maxCount = isRateMetric
+        ? 1
+        : Math.ceil(
+              Math.max(
+                  ...chartData.series.flatMap(s => s.data)
+              ) * 1.15 // add 15% headroom
+          );
+
+    // Y axis config
+    const yAxisConfig = isRateMetric
+        ? {
+              max: 1,
+              axisLabel: {
+                  formatter: (val: number) => `${(val * 100).toFixed(0)}%`
+              }
+          }
+        : {
+              max: maxCount,
+              axisLabel: {
+                  formatter: (val: number) => val.toLocaleString('nb-NO')
+              }
+          };
+
+    // Tooltip config
+    const tooltipConfig = isRateMetric
+        ? {
+              trigger: 'axis',
+              formatter: (params: Array<{ seriesName: string; value: number }>) =>
+                  params
+                      .map((p) => `${p.seriesName}: ${(p.value * 100).toFixed(2)}%`)
+                      .join('<br/>')
+          }
+        : {
+              trigger: 'axis',
+              formatter: (params: Array<{ seriesName: string; value: number }>) =>
+                  params
+                      .map((p) => `${p.seriesName}: ${p.value.toLocaleString('nb-NO')}`)
+                      .join('<br/>')
+          };
+
     return (
         <Paper shadow="sm" p="md" h="100%">
             <Text size="lg" fw={600} mb="md">
@@ -54,51 +99,19 @@ export function MortalityCategoryBarChart({
                         bottom: 80,
                         left: 50,
                         right: 30
-                    } as {
-                        top: number;
-                        bottom: number;
-                        left: number;
-                        right: number;
                     }}
-                    yAxis={{
-                        max: 1,
-                        axisLabel: {
-                            formatter: (val: number) => `${(val * 100).toFixed(0)}%`
-                        }
-                    } as {
-                        max: number;
-                        axisLabel: {
-                            formatter: (val: number) => string;
-                        };
-                    }}
-                    tooltip={{
-                        trigger: 'axis',
-                        formatter: (params: Array<{ seriesName: string; value: number }>) =>
-                            params
-                                .map((p) => `${p.seriesName}: ${(p.value * 100).toFixed(2)}%`)
-                                .join('<br/>')
-                    } as {
-                        trigger: string;
-                        formatter: (params: Array<{ seriesName: string; value: number }>) => string;
-                    }}
+                    yAxis={yAxisConfig}
+                    tooltip={tooltipConfig}
                     legend={{
                         orient: 'horizontal',
                         bottom: 0,
                         textStyle: {
                             fontSize: 12
                         }
-                    } as {
-                        type: string;
-                        orient: string;
-                        bottom: number;
-                        textStyle: {
-                            fontSize: number;
-                        };
                     }}
                     showValues={showValues}
                     horizontal={showHorizontal}
                 />
-
             </div>
 
             <Text size="xs" c="dimmed" mt="sm">

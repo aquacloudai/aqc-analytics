@@ -4,7 +4,7 @@ import api from '../api/auth/apiClient';
 import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
 import { useFilterStore } from '../store/filterStore';
 
-export function useMortalityCategoryRates() {
+export function useMortalityCategoryRates(periodGrouping: string = 'month') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<MortalityCategoryRate[]>([]);
@@ -17,6 +17,8 @@ export function useMortalityCategoryRates() {
   const weightRangeStart = useFilterStore((s) => s.weightRangeStart);
   const weightRangeEnd = useFilterStore((s) => s.weightRangeEnd);
   const includeSelf = useFilterStore((s) => s.include_self);
+
+  
 
   const fromMonth = fromMonthRaw?.format('YYYY-MM');
   const toMonth = toMonthRaw?.format('YYYY-MM');
@@ -38,7 +40,7 @@ export function useMortalityCategoryRates() {
             generation: generation || undefined,
             weight_range_start: weightRangeStart,
             weight_range_end: weightRangeEnd,
-            period_grouping: 'month',
+            period_grouping: periodGrouping,
             offset: 0,
             limit: 10000,
           },
@@ -63,7 +65,7 @@ export function useMortalityCategoryRates() {
 
   useEffect(() => {
     fetchData();
-  }, [applyFilters]);
+  }, [applyFilters, periodGrouping]);
 
   return { data, loading, error, refetch: fetchData };
 }

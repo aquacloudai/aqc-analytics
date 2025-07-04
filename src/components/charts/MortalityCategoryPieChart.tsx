@@ -114,7 +114,7 @@ export function MortalityCategoryPieChart({
       </div>
 
       <Text size="xs" c="dimmed" mt="sm">
-        Viser fordeling av valgt måling. Grupper under 0.3% er samlet som "Annet".
+        Viser fordeling av valgt måling over hele perioden. Grupper under 0.3% er samlet som "Annet".
       </Text>
 
     </Paper>

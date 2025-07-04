@@ -38,8 +38,6 @@ export function Layout() {
 
   const { selectedFarmer, setSelectedFarmer, clearSelectedFarmer } = useAdminFarmerStore();
 
-  console.log(user)
-
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
