@@ -1,4 +1,3 @@
-// src/components/LossByRegionOverview.tsx
 import {
   Paper,
   Text,
@@ -83,6 +82,13 @@ export const LossByRegionOverview = ({ data }: LossByRegionOverviewProps) => {
 
     const trend = entry.relative_trend_12_months;
 
+    function formatMonth(dateStr: string) {
+      const date = new Date(dateStr);
+      const label = date.toLocaleString('nb-NO', { month: 'long', year: 'numeric' });
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
+
     return (
       <Group grow>
         <MortalityCard
@@ -92,29 +98,36 @@ export const LossByRegionOverview = ({ data }: LossByRegionOverviewProps) => {
           isNegative={trend > 0}
           dateLabel="Akkumulert 12 mnd"
         />
-        <MortalityCard
-          title={`Dødelighet ${label}`}
-          value={formatPercent(rateMonth)}
-          delta={formatPercent(Math.abs(trend))}
-          isNegative={trend > 0}
-          dateLabel="Mai 2025"
-        />
+      <MortalityCard
+        title={`Dødelighet ${label}`}
+        value={formatPercent(rateMonth)}
+        delta={formatPercent(Math.abs(trend))}
+        isNegative={trend > 0}
+        dateLabel={entry.loss_rate_month ? formatMonth(entry.loss_rate_month) : ''}
+      />
+
       </Group>
     );
   };
 
-  const chartData = ['Midt', 'Nord', 'Sør', 'Norge'].map((region) => {
-    const regionData = data.filter((d) => d.production_region_name === region);
-    return {
-      name: region,
-      type: 'line',
-      data: regionData.map((d) =>
-        includeCulling
-          ? d.cumulative_weighted_loss_rate_12_months * 100
-          : d.cumulative_weighted_mortality_rate_12_months * 100
-      ),
-    };
-  });
+
+  const regions = ['Midt', 'Nord', 'Sør', 'Norge'];
+  const months = Array.from(new Set(data.map((d) => d.loss_rate_month))).sort();
+  const monthLabels = months.map((m) => m.slice(0, 7));
+
+  const chartData = regions.map(region => ({
+    name: region,
+    type: 'line',
+    data: months.map(month => {
+      const entry = data.find(
+        d => d.production_region_name === region && d.loss_rate_month === month
+      );
+      if (!entry) return null;
+      return includeCulling
+        ? entry.cumulative_weighted_loss_rate_12_months * 100
+        : entry.cumulative_weighted_mortality_rate_12_months * 100;
+    }),
+  }));
 
   return (
     <Paper withBorder p="md" radius="md">
@@ -136,22 +149,23 @@ export const LossByRegionOverview = ({ data }: LossByRegionOverviewProps) => {
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <ReactECharts
-            style={{ height: 300 }}
-            option={{
-              backgroundColor: 'transparent',
-              tooltip: { trigger: 'axis' },
-              legend: { data: ['Midt', 'Nord', 'Sør', 'Norge'] },
-              xAxis: { type: 'category', data: ['2021', '2022', '2023', '2024', '2025'] },
-              yAxis: {
-                type: 'value',
-                axisLabel: {
-                  formatter: '{value}%',
-                },
-              },
-              series: chartData,
-            }}
-          />
+<ReactECharts
+  style={{ height: 300 }}
+  option={{
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis' },
+    legend: { data: regions },
+    xAxis: { type: 'category', data: monthLabels },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: '{value}%',
+      },
+    },
+    series: chartData,
+  }}
+/>
+
           <Group justify="space-between" mt="sm">
             <Text size="sm">Rullende 12 mnd akkumulert dødelighet</Text>
             <Group>

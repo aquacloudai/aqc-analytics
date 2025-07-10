@@ -301,7 +301,7 @@ export function Pulsen() {
                             />
                             <Switch
                                 label="Vis område diagram"
-                                description="Vis mortalitet per område"
+                                description="Vis dødlighet per område"
                                 checked={showAreaChart}
                                 onChange={(e) => setShowAreaChart(e.currentTarget.checked)}
                                 size="sm"
@@ -314,7 +314,7 @@ export function Pulsen() {
                         <Alert variant="light" color="blue" icon={<IconInfoCircle size="1rem" />}>
                             <Text size="sm">
                                 <Text component="span" fw={500}>Dataperiode:</Text> {summaryStats.dateRange}
-                                {summaryStats.totalWeeks > 0 && ` • ${summaryStats.totalWeeks} uker med data`}
+                                {summaryStats.totalWeeks > 0 && ` • ${summaryStats.totalWeeks - 1} uker med data`}
                             </Text>
                         </Alert>
                     )}
@@ -325,7 +325,7 @@ export function Pulsen() {
             {showAreaChart && areaChartData.length > 0 && (
                 <Paper shadow="sm" p="md">
                     <Title order={3} mb="md">
-                        Mortalitet per uke etter område
+                       Dødlighet per uke etter område
                     </Title>
                     <Box h={400} w="100%">
                         <LineChart
@@ -338,7 +338,7 @@ export function Pulsen() {
                                 })),
                             }}
                             xLabel="Uke"
-                            yLabel="Mortalitet (%)"
+                            yLabel="Dødlighet (%)"
                             xTickFormatter={weekLabel}
                             yTickFormatter={(v: number) => (v * 100).toFixed(1)}
                             tooltipFormatter={(v: number) => (v * 100).toFixed(2) + " %"}

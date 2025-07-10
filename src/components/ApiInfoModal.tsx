@@ -39,7 +39,7 @@ export function ApiInfoModal({ opened, onClose, apiDetails }: ApiInfoModalProps)
                             <Stack gap="sm">
                                 <Box>
                                     <Text size="sm" fw={500} mb={4} c="dimmed">
-                                        Endpoint
+                                        Endepunkt
                                     </Text>
                                     <Code block p="sm" style={{ fontSize: '14px' }}>
                                         {api.url}
