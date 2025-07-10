@@ -7,6 +7,7 @@ import { Filters } from './pages/Filters';
 import { Settings } from './pages/Settings';
 import { Temperature } from './pages/Temperature';
 import { Trends } from './pages/Trends';
+import { Pulsen } from './pages/Pulsen';
 
 // Fish health subpages
 import { Codelist } from './pages/Codelist';
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
         path: 'fishhealth',
         element: <Outlet />, // wrapper for fish health submenu
         children: [
+          { path: 'puls', element: <Pulsen /> },
           { path: 'trend', element: <Trends /> },
           { path: 'benchmark', element: <Benchmark /> },
 

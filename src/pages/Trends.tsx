@@ -32,13 +32,15 @@ import { MortalityCategoryRateTable } from '../components/tables/LossMortalityCa
 import { MortalityCategoryPieChart } from '../components/charts/MortalityCategoryPieChart';
 import { useMortalityCategoryRates } from '../hooks/useLossByCategory';
 import { downloadChartData } from '../utils/downloadCSV';
-import { MortalitySankeyChart } from '../components/charts/MortalityCategorySankeyChart';
 import { MortalityCategoryBarChart } from '../components/charts/MortalityCategoryBarChart';
+import { ApiInfoModal } from '../components/ApiInfoModal';
+
 
 import { generateChartData } from '../utils/LossMortalityChartData';
 import { useFarmer } from '../hooks/useFarmer';
 import { useAdminFarmerStore } from '../store/adminFarmerStore';
 import { useAuthStore } from '../store/authStore';
+
 
 const PERIOD_OPTIONS = [
     { value: 'month', label: 'Måned' },
@@ -77,8 +79,12 @@ export function Trends() {
     const [showValues, setShowValues] = useState(false);
     const [showAsPercentage, setShowAsPercentage] = useState(false);
 
+    const [showApiModal, setShowApiModal] = useState(false);
+
     const [selectedPeriod, setSelectedPeriod] = useState('month');
-    const { data: mortalityCategories, loading, error, refetch: fetchData } = useMortalityCategoryRates(selectedPeriod);
+    const { data: mortalityCategories, loading, error, refetch: fetchData, apiDetails } = useMortalityCategoryRates(selectedPeriod);
+
+
 
     const [selectedFarmerView, setSelectedFarmerView] = useState('aquacloud');
 
@@ -89,6 +95,7 @@ export function Trends() {
 
     // New state for category filtering
     const [selectedLevel1Category, setSelectedLevel1Category] = useState<string | null>(null);
+
 
     const FARMER_OPTIONS = useMemo(() => {
         if (isAdmin) {
@@ -223,7 +230,7 @@ export function Trends() {
         return (
             <Stack align="center" mt="xl">
                 <Loader size="lg" />
-                <Text>Laster dødelighets trender...</Text>
+                <Text>Laster dødelighetstrender...</Text>
             </Stack>
         );
     }
@@ -279,15 +286,26 @@ export function Trends() {
                     </Tooltip>
 
                     {mortalityCategories.length > 0 && (
-                        <Button
-                            leftSection={<IconDownload size="1rem" />}
-                            variant="light"
-                            onClick={() => downloadChartData(filteredMortalityCategories)}
-                        >
-                            Last ned CSV
-                        </Button>
+                        <Group>
+                            <Button
+                                leftSection={<IconDownload size="1rem" />}
+                                variant="light"
+                                onClick={() => downloadChartData(filteredMortalityCategories)}
+                            >
+                                Last ned CSV
+                            </Button>
+                            <Button
+                                leftSection={<IconInfoCircle size="1rem" />}
+                                variant="light"
+                                onClick={() => setShowApiModal(true)}
+                            >
+                                Vis API-kall
+                            </Button>
+                        </Group>
                     )}
                 </Group>
+
+
             </Group>
 
             {/* Configuration Panel */}
@@ -465,26 +483,14 @@ export function Trends() {
                 />
             </Paper>
 
-            {/* Sankey Chart */}
-            <Paper shadow="sm" p="md">
-                <Text size="lg" fw={600} mb="md">
-                    {selectedLevel1Category ? 'Subkategorier' : 'Dødelighets Kategorier'}
-                    {selectedLevel1Category && (
-                        <Badge variant="light" color="blue" ml="sm">
-                            {selectedLevel1Category}
-                        </Badge>
-                    )}
-                </Text>
 
-                <Text size="sm" c="dimmed" mb="md">
-                    {selectedLevel1Category
-                        ? `Detaljerte data for alle subkategorier (loss_category_code) innenfor "${selectedLevel1Category}".`
-                        : 'Denne tabellen viser detaljerte dødelighetsdata per kategori.'
-                    }
-                </Text>
 
- 
-            </Paper>
+            <ApiInfoModal
+                opened={showApiModal}
+                onClose={() => setShowApiModal(false)}
+                apiDetails={apiDetails}
+            />
+
         </Stack>
     );
 }

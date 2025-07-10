@@ -2,7 +2,7 @@ import {
   Title, Paper, Tabs, Text, Loader, Alert, ScrollArea, Group, Stack, Button, TextInput
 } from '@mantine/core';
 import { useState, useMemo } from 'react';
-import { IconAlertCircle, IconDownload, IconSearch } from '@tabler/icons-react';
+import { IconAlertCircle, IconDownload, IconSearch, IconInfoCircle } from '@tabler/icons-react';
 import { downloadCodelist } from '../utils/downloadCSV';
 import { useCodelist } from '../hooks/useCodelist';
 import { CauseCodelistTable } from '../components/tables/codelist/CauseCodelistTable';
@@ -11,11 +11,13 @@ import { PlacementCodelistTable } from '../components/tables/codelist/PlacementC
 import { SpeciesCodelistTable } from '../components/tables/codelist/SpeciesCodelistTable';
 import { ValueChainCodelistTable } from '../components/tables/codelist/ValueChainTable';
 import type { Codelist } from '../types/codelist';
+import { ApiInfoModal } from "../components/ApiInfoModal";
 
 export function Codelist() {
   const [activeTab, setActiveTab] = useState<string | null>('basic');
   const [search, setSearch] = useState('');
-  const { data: codelist, loading, error } = useCodelist();
+  const { data: codelist, loading, error, apiDetails } = useCodelist();
+  const [showApiModal, setShowApiModal] = useState(false);
 
   // Filter logic
   const filteredCodelist = useMemo(() => {
@@ -70,13 +72,22 @@ export function Codelist() {
             onChange={(e) => setSearch(e.currentTarget.value)}
           />
           {codelist.length > 0 && (
-            <Button
-              leftSection={<IconDownload size="1rem" />}
-              variant="light"
-              onClick={() => downloadCodelist(filteredCodelist)}
-            >
-              Last ned CSV
-            </Button>
+            <>
+              <Button
+                leftSection={<IconDownload size="1rem" />}
+                variant="light"
+                onClick={() => downloadCodelist(filteredCodelist)}
+              >
+                Last ned CSV
+              </Button>
+              <Button
+                leftSection={<IconInfoCircle size="1rem" />}
+                variant="light"
+                onClick={() => setShowApiModal(true)}
+              >
+                Vis API-kall
+              </Button>
+            </>
           )}
         </Group>
       </Group>
@@ -110,6 +121,12 @@ export function Codelist() {
           </ScrollArea>
         </Tabs>
       </Paper>
+
+      <ApiInfoModal
+        opened={showApiModal}
+        onClose={() => setShowApiModal(false)}
+        apiDetails={[apiDetails]}
+      />
     </div>
   );
 }

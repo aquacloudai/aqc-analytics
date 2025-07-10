@@ -1,4 +1,5 @@
 import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
+import type { LossMortalityGenerationRate } from '../types/loss_mortality_generation_rate';
 import type { Codelist } from '../types/codelist';
 
 export const formatPeriod = (period: string): string => {
@@ -7,7 +8,7 @@ export const formatPeriod = (period: string): string => {
   return `${monthNames[parseInt(month) - 1]} ${year}`;
 };
 
-export const downloadChartData = (data: MortalityCategoryRate[], filename = 'mortality_trends.csv') => {
+export const downloadChartData = (data: MortalityCategoryRate[] | LossMortalityGenerationRate[], filename = 'mortality_trends.csv') => {
   const headers = [
     'Periode', 'Kategori kode', 'Kategori navn', 'Kategori kort navn', 'Level 1 kategori',
     'Tap antall', 'Dødelighet antall', 'Utkasting antall',
@@ -16,20 +17,20 @@ export const downloadChartData = (data: MortalityCategoryRate[], filename = 'mor
   ];
 
   const csvRows = data.map(item => [
-    formatPeriod(item.period),
-    item.loss_category_code,
-    item.category_name,
-    item.category_short_name,
-    item.category_level_1_name,
-    item.loss_count.toString(),
-    item.mortality_count.toString(),
-    item.culling_count.toString(),
+    formatPeriod('period' in item ? item.period : item.loss_rate_month),
+    'loss_category_code' in item ? item.loss_category_code : '',
+    'category_name' in item ? item.category_name : '',
+    'category_short_name' in item ? item.category_short_name : '',
+    'category_level_1_name' in item ? item.category_level_1_name : '',
+    'loss_count' in item ? item.loss_count.toString() : '',
+    'mortality_count' in item ? item.mortality_count.toString() : '',
+    'culling_count' in item ? item.culling_count.toString() : '',
     item.loss_rate.toFixed(2),
     item.mortality_rate.toFixed(2),
     item.culling_rate.toFixed(2),
-    item.loss_avg_weight_gram.toString(),
-    item.mortality_avg_weight_gram.toString(),
-    (item.culling_avg_weight_gram || 0).toString()
+    'loss_avg_weight_gram' in item ? item.loss_avg_weight_gram.toString() : '',
+    'mortality_avg_weight_gram' in item ? item.mortality_avg_weight_gram.toString() : '',
+    'culling_avg_weight_gram' in item && item.culling_avg_weight_gram != null ? item.culling_avg_weight_gram.toString() : ''
   ]);
 
   const csvContent = [headers, ...csvRows]
@@ -118,3 +119,4 @@ export const downloadCodelist = (data: Codelist[], filename: string = 'kodeliste
   
   URL.revokeObjectURL(url);
 };
+

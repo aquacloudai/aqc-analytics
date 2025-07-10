@@ -169,11 +169,11 @@ export function Layout() {
           >
             <NavLink
               component={Link}
-              to="/fishhealth/overview"
-              label="Oversikt"
-              active={location.pathname === '/fishhealth/overview'}
+              to="/fishhealth/puls"
+              label="Pulsen"
+              active={location.pathname === '/fishhealth/puls'}
               style={{
-                opacity: 0.5,
+                opacity: 1,
               }}
             />
             <NavLink
