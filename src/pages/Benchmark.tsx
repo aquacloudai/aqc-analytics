@@ -12,14 +12,15 @@ import {
   SegmentedControl,
   ActionIcon,
   Tooltip,
-  Divider,
   Button
 } from '@mantine/core';
 import { IconAlertCircle, IconRefresh, IconDownload, IconInfoCircle } from '@tabler/icons-react';
 import { useLossByGeneration } from '../hooks/lossMortality/useLossByGeneration';
+import { useLossByAreaAndMonth } from '../hooks/lossMortality/useLossByAreaAndMonth'; // <-- Your new hook
 import { LineChart } from 'aqc-charts';
 import { useState, useMemo, useEffect } from 'react';
 import type { LossMortalityGenerationRate } from '../types/loss_mortality_generation_rate';
+import type { LossMortalityByAreaAndMonthRecord } from '../types/loss_mortality_by_area_and_month';
 import { downloadChartData } from '../utils/downloadCSV';
 import { ApiInfoModal } from '../components/ApiInfoModal';
 import { useFilterStore } from '../store/filterStore';
@@ -43,8 +44,7 @@ const metricMap = {
 };
 
 export function Benchmark() {
-
-
+  // GENERATION HOOK LOGIC (as before) -------------------------
   const [selectedGenerations, setSelectedGenerations] = useState<string[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'loss' | 'mortality' | 'culling'>('loss');
   const [xAxisMode, setXAxisMode] = useState<'relative' | 'calendar'>('relative');
@@ -58,9 +58,7 @@ export function Benchmark() {
     include_self,
     from_month,
     to_month,
-    applyFilters,
   } = useFilterStore();
-
 
   const params = useMemo(() => ({
     area: selectedArea ?? '%',
@@ -80,10 +78,117 @@ export function Benchmark() {
     to_month,
   ]);
 
-
   const { data: lossByGeneration = [], loading, error, refetch, apiDetails } = useLossByGeneration(params);
 
-  // Generate generations list
+  // AREA HOOK LOGIC ---------------------------------------------
+  const areaParams = useMemo(() => ({
+    area: selectedArea ?? '%',
+    generation: selectedGeneration ?? undefined,
+    weight_range_start: weightRangeStart,
+    weight_range_end: weightRangeEnd,
+    include_self,
+    from_month: from_month ? from_month.format('YYYY-MM-DD') : undefined,
+    to_month: to_month ? to_month.format('YYYY-MM-DD') : undefined,
+    limit: 1000,
+    offset: 0,
+  }), [
+    selectedArea,
+    selectedGeneration,
+    weightRangeStart,
+    weightRangeEnd,
+    include_self,
+    from_month,
+    to_month,
+  ]);
+  const {
+    data: areaData = [],
+    loading: areaLoading,
+    error: areaError,
+    refetch: areaRefetch
+  } = useLossByAreaAndMonth(areaParams);
+  const areaSourceOptions = [
+    { label: "Aquacloud", value: "aquacloud" },
+    { label: "Farmer", value: "farmer" },
+    { label: "Fdir", value: "fdir" },
+  ];
+
+  // Map area source/metric to record keys
+  const areaMetricFieldMap = {
+    loss: {
+      aquacloud: "cumulative_loss_rate_12_months",
+      farmer: "farmer_cumulative_loss_rate_12_months",
+      fdir: "fdir_cumulative_loss_rate_12_months",
+    },
+    mortality: {
+      aquacloud: "cumulative_mortality_rate_12_months",
+      farmer: "farmer_cumulative_mortality_rate_12_months",
+      fdir: "fdir_cumulative_mortality_rate_12_months",
+    },
+    culling: {
+      aquacloud: "cumulative_culling_rate_12_months",
+      farmer: "farmer_cumulative_culling_rate_12_months",
+      fdir: "fdir_cumulative_culling_rate_12_months",
+    },
+  };
+
+  const areaList = useMemo(() => {
+    if (!areaData) return [];
+    return Array.from(new Set(areaData.map(d => d.aquacloud_area_name))).sort();
+  }, [areaData]);
+
+  // Create all combinations for selection
+  const selectableAreaSources = useMemo(() => {
+    return areaList.flatMap(area =>
+      areaSourceOptions.map(source => ({
+        value: `${area}__${source.value}`,
+        label: `${area} (${source.label})`,
+        area,
+        source: source.value,
+      }))
+    );
+  }, [areaList]);
+
+  const [selectedAreaSources, setSelectedAreaSources] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (selectedAreaSources.length === 0 && selectableAreaSources.length > 0) {
+      setSelectedAreaSources([selectableAreaSources[0].value]);
+    }
+  }, [selectableAreaSources, selectedAreaSources.length]);
+
+  const areaMetricOptions = [
+    { label: 'Tap', value: 'loss' },
+    { label: 'Dødelighet', value: 'mortality' },
+    { label: 'Utslakting', value: 'culling' },
+  ];
+  const [areaMetric, setAreaMetric] = useState<'loss' | 'mortality' | 'culling'>('loss');
+
+  // X-Axis: Month categories
+  const areaCategories = useMemo(() => {
+    if (!areaData.length) return [];
+    return Array.from(new Set(areaData.map(d => d.month))).sort();
+  }, [areaData]);
+
+  const areaChartSeries = useMemo(() => {
+    return selectedAreaSources.map(sel => {
+      const [area, source] = sel.split('__');
+      const label = `${area} (${areaSourceOptions.find(s => s.value === source)?.label ?? source})`;
+      const field = areaMetricFieldMap[areaMetric][source as keyof typeof areaMetricFieldMap['loss']];
+      const records = areaData.filter(d => d.aquacloud_area_name === area);
+      const data = areaCategories.map(month => {
+        const rec = records.find(r => r.month === month);
+        return rec && rec[field as keyof LossMortalityByAreaAndMonthRecord]
+          ? +(Number(rec[field as keyof LossMortalityByAreaAndMonthRecord]) * 100).toFixed(2)
+          : 0;
+      });
+      return { name: label, type: "line", data };
+    });
+  }, [selectedAreaSources, areaCategories, areaMetric, areaData]);
+
+  // ...JSX in your return (replace your area-section with this):
+
+
+  // ----- Existing Benchmark: Generasjoner chart logic -----
   const generations = useMemo(() => {
     if (!lossByGeneration) return [];
     const unique = Array.from(new Set(lossByGeneration.map((d) => d.generation))).sort();
@@ -98,8 +203,6 @@ export function Benchmark() {
     }
   }, [generations, initialized, selectedGenerations.length]);
 
-
-  // Filter by selected generations
   const filtered = useMemo(() => {
     return selectedGenerations.length > 0
       ? lossByGeneration?.filter((d) => selectedGenerations.includes(d.generation)) ?? []
@@ -135,7 +238,6 @@ export function Benchmark() {
     return Array.from({ length: maxMonth + 1 }, (_, i) => i.toString());
   }, [xAxisMode, filtered, maxMonth]);
 
-  // Prepare series for the chart
   const chartSeries = useMemo(() => {
     if (selectedGenerations.length === 0) return [];
     const series: Array<{ name: string; type: string; data: number[] }> = [];
@@ -191,7 +293,6 @@ export function Benchmark() {
     return series;
   }, [selectedGenerations, filtered, categories, aqua, farmer, xAxisMode]);
 
-  // Optional: summary stats, matching Trends
   const summaryStats = useMemo(() => {
     if (!filtered.length) return null;
     return {
@@ -202,37 +303,88 @@ export function Benchmark() {
     };
   }, [filtered]);
 
-  if (loading) {
-    return (
-      <Stack align="center" mt="xl">
-        <Loader size="lg" />
-        <Text>Laster generasjonsdata...</Text>
-      </Stack>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert icon={<IconAlertCircle size="1rem" />} title="Feil" color="red" mt="lg">
-        {error}
-        <Button
-          variant="light"
-          size="xs"
-          onClick={refetch}
-          leftSection={<IconRefresh size="1rem" />}
-          mt="md"
-        >
-          Prøv igjen
-        </Button>
-      </Alert>
-    );
-  }
-
-  // ---- Main Page ----
+  // RENDER ---------------------------------------------------------
   return (
     <Stack gap="lg">
-      {/* Page Header */}
+
+      {/* ---- Benchmark: Områder (NEW) ---- */}
       <Group justify="space-between" align="flex-end">
+        <Title order={2}>Benchmark: Områder</Title>
+        <Group>
+          <Tooltip label="Oppdater data">
+            <ActionIcon variant="light" onClick={areaRefetch} loading={areaLoading}>
+              <IconRefresh size="1rem" />
+            </ActionIcon>
+          </Tooltip>
+          <Button
+            leftSection={<IconDownload size="1rem" />}
+            variant="light"
+            onClick={() => {/* CSV logic here if you want, see earlier message */ }}
+            disabled={!areaData.length}
+          >
+            Last ned CSV
+          </Button>
+        </Group>
+      </Group>
+      <Card shadow="sm" p="md">
+        <Flex gap="md" align="center" wrap="wrap">
+          <MultiSelect
+            label="Områder"
+            placeholder="Velg områder og kilde"
+            data={selectableAreaSources}
+            value={selectedAreaSources}
+            onChange={setSelectedAreaSources}
+            w={400}
+            searchable
+            clearable
+            nothingFound="Ingen områder"
+          />
+          <SegmentedControl
+            value={areaMetric}
+            onChange={setAreaMetric}
+            data={areaMetricOptions}
+          />
+        </Flex>
+      </Card>
+      <Paper shadow="sm" p="md">
+        <Text size="lg" fw={600} mb="md">
+          {areaMetricOptions.find(o => o.value === areaMetric)?.label}
+        </Text>
+        {areaLoading ? (
+          <Stack align="center" mt="xl">
+            <Loader size="lg" />
+            <Text>Laster områdedata...</Text>
+          </Stack>
+        ) : areaError ? (
+          <Alert icon={<IconAlertCircle size="1rem" />} title="Feil" color="red" mt="lg">
+            {areaError}
+            <Button
+              variant="light"
+              size="xs"
+              onClick={areaRefetch}
+              leftSection={<IconRefresh size="1rem" />}
+              mt="md"
+            >
+              Prøv igjen
+            </Button>
+          </Alert>
+        ) : (
+          <LineChart
+            title={`${areaMetricOptions.find(o => o.value === areaMetric)?.label || ''} per område og kilde`}
+            data={{
+              categories: areaCategories,
+              series: areaChartSeries,
+            }}
+            unit="%"
+            height={400}
+            xAxisTitle="Kalendermåned"
+            yAxisTitle={areaMetricOptions.find(o => o.value === areaMetric)?.label || ''}
+          />
+        )}
+      </Paper>
+
+      {/* ---- Benchmark: Generasjoner (existing) ---- */}
+      <Group justify="space-between" align="flex-end" mt="xl">
         <Title order={1}>
           Benchmark: Generasjoner
           {summaryStats && (
