@@ -1,10 +1,10 @@
 // hooks/useLossByAreaAndWeek.ts
 
 import { useEffect, useState, useMemo } from 'react';
-import { fetchLossByAreaAndWeek } from '../api/lossMortality/fetchLossByAreaAndWeek';
-import type { MortalityCategoryByAreaAndWeekRecord } from '../types/loss_mortality_by_area_and_week';
-import { isKeycloakReady } from '../config/keycloak';
-import type { ApiDetail } from '../types/api_detail';
+import { fetchLossByAreaAndWeek } from '../../api/lossMortality/fetchLossByAreaAndWeek';
+import type { MortalityCategoryByAreaAndWeekRecord } from '../../types/loss_mortality_by_area_and_week';
+import { isKeycloakReady } from '../../config/keycloak';
+import type { ApiDetail } from '../../types/api_detail';
 
 export function useLossByAreaAndWeek(
   weekCount: number,

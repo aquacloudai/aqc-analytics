@@ -4,7 +4,7 @@ import {
 import { useState, useMemo } from 'react';
 import { IconAlertCircle, IconDownload, IconSearch, IconInfoCircle } from '@tabler/icons-react';
 import { downloadCodelist } from '../utils/downloadCSV';
-import { useCodelist } from '../hooks/useCodelist';
+import { useCodelist } from '../hooks/common/useCodelist';
 import { CauseCodelistTable } from '../components/tables/codelist/CauseCodelistTable';
 import { BasicCodelistTable } from '../components/tables/codelist/CodelistTable';
 import { PlacementCodelistTable } from '../components/tables/codelist/PlacementCodelistTable';

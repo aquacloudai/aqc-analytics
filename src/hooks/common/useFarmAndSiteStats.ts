@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { fetchFarmAndSiteStats } from '../api/common/fetchFarmAndSiteStats';
-import type { FarmAndSiteStats } from '../types/farm_and_site_stats';
-import { isKeycloakReady } from '../config/keycloak';
+import { fetchFarmAndSiteStats } from '../../api/common/fetchFarmAndSiteStats';
+import type { FarmAndSiteStats } from '../../types/farm_and_site_stats';
+import { isKeycloakReady } from '../../config/keycloak';
 
 export function useFarmAndSiteStats(): {
   data: FarmAndSiteStats | null;

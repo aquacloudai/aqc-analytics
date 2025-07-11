@@ -16,12 +16,13 @@ import {
   Button
 } from '@mantine/core';
 import { IconAlertCircle, IconRefresh, IconDownload, IconInfoCircle } from '@tabler/icons-react';
-import { useLossByGeneration } from '../hooks/useLossByGeneration';
+import { useLossByGeneration } from '../hooks/lossMortality/useLossByGeneration';
 import { LineChart } from 'aqc-charts';
 import { useState, useMemo, useEffect } from 'react';
 import type { LossMortalityGenerationRate } from '../types/loss_mortality_generation_rate';
-import { downloadChartData } from '../utils/downloadCSV'; // If you want a CSV export
+import { downloadChartData } from '../utils/downloadCSV';
 import { ApiInfoModal } from '../components/ApiInfoModal';
+import { useFilterStore } from '../store/filterStore';
 
 const metricMap = {
   loss: {
@@ -42,14 +43,45 @@ const metricMap = {
 };
 
 export function Benchmark() {
-  const { data: lossByGeneration = [], loading, error, refetch, apiDetails } = useLossByGeneration();
+
 
   const [selectedGenerations, setSelectedGenerations] = useState<string[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'loss' | 'mortality' | 'culling'>('loss');
   const [xAxisMode, setXAxisMode] = useState<'relative' | 'calendar'>('relative');
   const [initialized, setInitialized] = useState(false);
   const [showApiModal, setShowApiModal] = useState(false);
+  const {
+    selectedArea,
+    selectedGeneration,
+    weightRangeStart,
+    weightRangeEnd,
+    include_self,
+    from_month,
+    to_month,
+    applyFilters,
+  } = useFilterStore();
 
+
+  const params = useMemo(() => ({
+    area: selectedArea ?? '%',
+    generation: selectedGeneration ?? undefined,
+    weight_range_start: weightRangeStart,
+    weight_range_end: weightRangeEnd,
+    include_self,
+    from_month: from_month ? from_month.format('YYYY-MM-DD') : undefined,
+    to_month: to_month ? to_month.format('YYYY-MM-DD') : undefined,
+  }), [
+    selectedArea,
+    selectedGeneration,
+    weightRangeStart,
+    weightRangeEnd,
+    include_self,
+    from_month,
+    to_month,
+  ]);
+
+
+  const { data: lossByGeneration = [], loading, error, refetch, apiDetails } = useLossByGeneration(params);
 
   // Generate generations list
   const generations = useMemo(() => {
@@ -65,6 +97,7 @@ export function Benchmark() {
       setInitialized(true);
     }
   }, [generations, initialized, selectedGenerations.length]);
+
 
   // Filter by selected generations
   const filtered = useMemo(() => {

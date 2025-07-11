@@ -1,7 +1,7 @@
 // pages/SiteDetail.tsx
 import { useParams } from 'react-router-dom';
 import { Title, Text, Paper, Loader } from '@mantine/core';
-import { useSite } from '../hooks/useSite';
+import { useSite } from '../hooks/common/useSite';
 
 export function Site() {
   const { site_id } = useParams<{ site_id: string }>();

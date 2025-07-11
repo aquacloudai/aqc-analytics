@@ -3,7 +3,6 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { FarmMap } from './pages/FarmMap';
 import { Reports } from './pages/Reports';
-import { Filters } from './pages/Filters';
 import { Settings } from './pages/Settings';
 import { Temperature } from './pages/Temperature';
 import { Trends } from './pages/Trends';
@@ -39,7 +38,6 @@ const router = createBrowserRouter([
 
       { path: 'map', element: <FarmMap /> },
       { path: 'reports', element: <Reports /> },
-      { path: 'filters', element: <Filters /> },
       { path: 'settings', element: <Settings /> },
       { path: 'temperature', element: <Temperature /> },
       { path: 'about', element: <OmaquaCloud /> },

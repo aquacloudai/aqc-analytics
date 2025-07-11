@@ -10,7 +10,7 @@ import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useFilterStore } from '../../store/filterStore';
-import { useBiomassComparisonData } from '../../hooks/useBiomassComparionData';
+import { useBiomassComparisonData } from '../../hooks/biomass/useBiomassComparionData';
 import { transformBiomassChartData, getBiomassChartOptions } from '../../utils/biomass';
 
 export function BiomassComparisonChart() {

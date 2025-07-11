@@ -13,6 +13,7 @@ import {
 import { IconArrowUpRight, IconArrowDownRight } from '@tabler/icons-react';
 import ReactECharts from 'echarts-for-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import type { LossByRegionRecord } from '../types/loss_by_region';
 
@@ -98,13 +99,13 @@ export const LossByRegionOverview = ({ data }: LossByRegionOverviewProps) => {
           isNegative={trend > 0}
           dateLabel="Akkumulert 12 mnd"
         />
-      <MortalityCard
-        title={`Dødelighet ${label}`}
-        value={formatPercent(rateMonth)}
-        delta={formatPercent(Math.abs(trend))}
-        isNegative={trend > 0}
-        dateLabel={entry.loss_rate_month ? formatMonth(entry.loss_rate_month) : ''}
-      />
+        <MortalityCard
+          title={`Dødelighet ${label}`}
+          value={formatPercent(rateMonth)}
+          delta={formatPercent(Math.abs(trend))}
+          isNegative={trend > 0}
+          dateLabel={entry.loss_rate_month ? formatMonth(entry.loss_rate_month) : ''}
+        />
 
       </Group>
     );
@@ -141,7 +142,12 @@ export const LossByRegionOverview = ({ data }: LossByRegionOverviewProps) => {
               {renderCards('Sør', 'region Sør')}
               {renderCards('Midt', 'region Midt')}
               {renderCards('Nord', 'region Nord')}
-              <Button variant="default" mt="sm">
+              <Button
+                component={Link}
+                to="/fishhealth/trend"
+                variant="default"
+                mt="sm"
+              >
                 Klikk for mer om tap- og dødelighet
               </Button>
             </Stack>
@@ -149,22 +155,22 @@ export const LossByRegionOverview = ({ data }: LossByRegionOverviewProps) => {
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 6 }}>
-<ReactECharts
-  style={{ height: 300 }}
-  option={{
-    backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis' },
-    legend: { data: regions },
-    xAxis: { type: 'category', data: monthLabels },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: '{value}%',
-      },
-    },
-    series: chartData,
-  }}
-/>
+          <ReactECharts
+            style={{ height: 300 }}
+            option={{
+              backgroundColor: 'transparent',
+              tooltip: { trigger: 'axis' },
+              legend: { data: regions },
+              xAxis: { type: 'category', data: monthLabels },
+              yAxis: {
+                type: 'value',
+                axisLabel: {
+                  formatter: '{value}%',
+                },
+              },
+              series: chartData,
+            }}
+          />
 
           <Group justify="space-between" mt="sm">
             <Text size="sm">Rullende 12 mnd akkumulert dødelighet</Text>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getAqcFdirBiomassPerMonth } from '../api/biomass/aqcFdirBiomassComparison';
-import { isKeycloakReady } from '../config/keycloak';
-import type { AquacloudFdirBiomassPerMonth } from '../types/aquacloud_fdir_biomass_per_month';
+import { getAqcFdirBiomassPerMonth } from '../../api/biomass/aqcFdirBiomassComparison';
+import { isKeycloakReady } from '../../config/keycloak';
+import type { AquacloudFdirBiomassPerMonth } from '../../types/aquacloud_fdir_biomass_per_month';
 
 export function useBiomassComparisonData(fromMonth?: string, toMonth?: string, dependencies: any[] = []) {
   const [data, setData] = useState<AquacloudFdirBiomassPerMonth[]>([]);

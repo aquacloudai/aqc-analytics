@@ -8,7 +8,7 @@ import {
   Text,
 } from '@mantine/core';
 import { SiteCard } from '../components/SiteCard';
-import { useSites } from '../hooks/useSites';
+import { useSites } from '../hooks/common/useSites';
 import type { Site } from '../types/site';
 
 export function Sites() {

@@ -1,6 +1,6 @@
-import api from '../api/auth/apiClient';
+import api from '../../api/auth/apiClient';
 import { useEffect, useState } from 'react';
-import type { Farmer } from '../types/farmer';
+import type { Farmer } from '../../types/farmer';
 
 export function useFarmers(): {
   data: Farmer[];

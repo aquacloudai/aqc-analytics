@@ -1,7 +1,5 @@
 import { Stack} from '@mantine/core';
-import { useFarmers } from '../hooks/useFarmers';
-import { useFarmAndSiteStats } from '../hooks/useFarmAndSiteStats';
-import { useLossByRegion } from '../hooks/useLossByRegion';
+import { useLossByRegion } from '../hooks/lossMortality/useLossByRegion';
 import { LossByRegionOverview } from '../components/LossByRegionContainer';
 import { TemperatureLineChart } from '../components/charts/TemperatureByWeekAndRegion';
 

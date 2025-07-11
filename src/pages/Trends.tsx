@@ -30,7 +30,7 @@ import {
 import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
 import { MortalityCategoryRateTable } from '../components/tables/LossMortalityCategoryRateTable';
 import { MortalityCategoryPieChart } from '../components/charts/MortalityCategoryPieChart';
-import { useMortalityCategoryRates } from '../hooks/useLossByCategory';
+import { useMortalityCategoryRates } from '../hooks/lossMortality/useLossByCategory';
 import { downloadChartData } from '../utils/downloadCSV';
 import { MortalityCategoryBarChart } from '../components/charts/MortalityCategoryBarChart';
 import { ApiInfoModal } from '../components/ApiInfoModal';

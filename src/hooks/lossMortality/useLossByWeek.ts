@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
-import { fetchLossByWeek } from '../api/lossMortality/fetchLossByWeek';
-import type { MortalityCategoryByWeekRecord } from '../types/loss_mortality_by_week';
-import { isKeycloakReady } from '../config/keycloak';
-import type { ApiDetail } from '../types/api_detail';
+import { fetchLossByWeek } from '../../api/lossMortality/fetchLossByWeek';
+import type { MortalityCategoryByWeekRecord } from '../../types/loss_mortality_by_week';
+import { isKeycloakReady } from '../../config/keycloak';
+import type { ApiDetail } from '../../types/api_detail';
 
 export function useLossByWeek(
   weekCount: number,

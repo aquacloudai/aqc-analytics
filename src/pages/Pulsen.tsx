@@ -29,8 +29,8 @@ import {
     IconAlertCircle
 } from "@tabler/icons-react";
 import { LineChart } from "aqc-charts";
-import { useLossByWeek } from "../hooks/useLossByWeek";
-import { useLossByAreaAndWeek } from "../hooks/useLossByAreaAndWeek";
+import { useLossByWeek } from "../hooks/lossMortality/useLossByWeek";
+import { useLossByAreaAndWeek } from "../hooks/lossMortality/useLossByAreaAndWeek.ts";
 import type { MortalityCategoryByWeekRecord } from "../types/loss_mortality_by_week";
 import type { MortalityCategoryByAreaAndWeekRecord } from "../types/loss_mortality_by_area_and_week";
 import { ApiInfoModal } from "../components/ApiInfoModal";

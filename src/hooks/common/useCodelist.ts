@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import api from '../api/auth/apiClient';
+import api from '../../api/auth/apiClient';
 
-import type { Codelist } from '../types/codelist';
-import { isKeycloakReady } from '../config/keycloak';
-import type { ApiDetail } from '../types/api_detail';
+import type { Codelist } from '../../types/codelist';
+import { isKeycloakReady } from '../../config/keycloak';
+import type { ApiDetail } from '../../types/api_detail';
 
 
 export function useCodelist() {

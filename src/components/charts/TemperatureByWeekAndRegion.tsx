@@ -1,6 +1,6 @@
 import { LineChart } from 'aqc-charts';
 import { Box, Paper, Title } from '@mantine/core';
-import { useTemperatureByWeekAndRegion } from '../../hooks/useTemperatureByWeekAndRegion';
+import { useTemperatureByWeekAndRegion } from '../../hooks/environment/useTemperatureByWeekAndRegion';
 import { useMemo } from 'react';
 
 export function TemperatureLineChart() {

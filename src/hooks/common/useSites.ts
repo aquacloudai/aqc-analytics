@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import api from '../api/auth/apiClient';
-import { isKeycloakReady } from '../config/keycloak';
-import type { Site } from '../types/site';
+import api from '../../api/auth/apiClient';
+import { isKeycloakReady } from '../../config/keycloak';
+import type { Site } from '../../types/site';
 
 export function useSites() {
     const [data, setData] = useState<Site[]>([]);

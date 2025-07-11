@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { isKeycloakReady } from '../config/keycloak';
-import api from '../api/auth/apiClient';
-import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
-import { useFilterStore } from '../store/filterStore';
-import type { ApiDetail } from '../types/api_detail';
+import { isKeycloakReady } from '../../config/keycloak';
+import api from '../../api/auth/apiClient';
+import type { MortalityCategoryRate } from '../../types/loss_mortality_category_rate';
+import { useFilterStore } from '../../store/filterStore';
+import type { ApiDetail } from '../../types/api_detail';
 
 
 export function useMortalityCategoryRates(periodGrouping: string = 'month') {

@@ -1,6 +1,6 @@
 import { Grid, Text, Paper, Stack, Title, Card, SimpleGrid, Center } from '@mantine/core';
-import { useFarmers } from '../hooks/useFarmers';
-import { useFarmAndSiteStats } from '../hooks/useFarmAndSiteStats';
+import { useFarmers } from '../hooks/common/useFarmers';
+import { useFarmAndSiteStats } from '../hooks/common/useFarmAndSiteStats';
 import { FarmersInAquaCloudTable } from '../components/tables/FarmersInAquaCloudTable';
 import { BiomassComparisonChart } from '../components/charts/BiomassComparisonChart';
 

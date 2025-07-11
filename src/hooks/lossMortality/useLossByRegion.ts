@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { fetchLossByRegion } from '../api/lossMortality/fetchLossByRegion';
-import type { LossByRegionRecord } from '../types/loss_by_region';
-import { isKeycloakReady } from '../config/keycloak';
+import { fetchLossByRegion } from '../../api/lossMortality/fetchLossByRegion';
+import type { LossByRegionRecord } from '../../types/loss_by_region';
+import { isKeycloakReady } from '../../config/keycloak';
 
 export function useLossByRegion(): {
   data: LossByRegionRecord[];
