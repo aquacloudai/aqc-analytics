@@ -44,7 +44,6 @@ const metricMap = {
 };
 
 export function Benchmark() {
-  // GENERATION HOOK LOGIC (as before) -------------------------
   const [selectedGenerations, setSelectedGenerations] = useState<string[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'loss' | 'mortality' | 'culling'>('loss');
   const [xAxisMode, setXAxisMode] = useState<'relative' | 'calendar'>('relative');
@@ -80,7 +79,6 @@ export function Benchmark() {
 
   const { data: lossByGeneration = [], loading, error, refetch, apiDetails } = useLossByGeneration(params);
 
-  // AREA HOOK LOGIC ---------------------------------------------
   const areaParams = useMemo(() => ({
     area: selectedArea ?? '%',
     generation: selectedGeneration ?? undefined,
@@ -112,7 +110,6 @@ export function Benchmark() {
     { label: "Fdir", value: "fdir" },
   ];
 
-  // Map area source/metric to record keys
   const areaMetricFieldMap = {
     loss: {
       aquacloud: "cumulative_loss_rate_12_months",
@@ -185,10 +182,7 @@ export function Benchmark() {
     });
   }, [selectedAreaSources, areaCategories, areaMetric, areaData]);
 
-  // ...JSX in your return (replace your area-section with this):
 
-
-  // ----- Existing Benchmark: Generasjoner chart logic -----
   const generations = useMemo(() => {
     if (!lossByGeneration) return [];
     const unique = Array.from(new Set(lossByGeneration.map((d) => d.generation))).sort();
@@ -303,7 +297,7 @@ export function Benchmark() {
     };
   }, [filtered]);
 
-  // RENDER ---------------------------------------------------------
+
   return (
     <Stack gap="lg">
 
@@ -319,7 +313,7 @@ export function Benchmark() {
           <Button
             leftSection={<IconDownload size="1rem" />}
             variant="light"
-            onClick={() => {/* CSV logic here if you want, see earlier message */ }}
+            onClick={() => {/* CSV logic here */ }}
             disabled={!areaData.length}
           >
             Last ned CSV
@@ -337,11 +331,10 @@ export function Benchmark() {
             w={400}
             searchable
             clearable
-            nothingFound="Ingen områder"
           />
           <SegmentedControl
             value={areaMetric}
-            onChange={setAreaMetric}
+            onChange={(value) => setAreaMetric(value as 'loss' | 'mortality' | 'culling')}
             data={areaMetricOptions}
           />
         </Flex>
