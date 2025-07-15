@@ -1,5 +1,6 @@
 import type { MortalityCategoryRate } from '../types/loss_mortality_category_rate';
-import { groupMortalityData } from '../utils/GroupMortalityData'; // adjust path if needed
+import { groupMortalityData } from '../utils/GroupMortalityData';
+import type { LossMortalityCategoryBySize } from '../types/loss_mortality_category_by_size';
 
 export interface ChartSeries {
   name: string;
@@ -27,6 +28,55 @@ const CHART_COLORS = [
   '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
   '#ea7ccc', '#2fc25b', '#ffc658', '#8884d8'
 ];
+
+
+export function generateSizeDistributionChartData(data: LossMortalityCategoryBySize[]) {
+    if (!data || data.length === 0) return { categories: [], series: [] };
+
+    // 1. Find all unique weight buckets (sorted)
+    const weightBuckets = Array.from(new Set(data.map(d => d.weight_group))).sort((a, b) => a - b);
+
+    // 2. Find all unique categories (keep both code and name)
+    const uniqueCategories = Array.from(
+        new Map(data.map(d => [d.category_code_level_1, d.category_name])).entries()
+    );
+
+    // 3. Build: { [bucket]: { [cat]: sum(rate) } }
+    const agg: Record<number, Record<string, number>> = {};
+    for (const d of data) {
+        const bucket = d.weight_group;
+        const cat = d.category_code_level_1;
+        if (!agg[bucket]) agg[bucket] = {};
+        if (!agg[bucket][cat]) agg[bucket][cat] = 0;
+        agg[bucket][cat] += d.rate ?? 0;
+    }
+
+    // 4. Compute total rate per bucket (for percent calculation)
+    const totals: Record<number, number> = {};
+    for (const bucket of weightBuckets) {
+        totals[bucket] = uniqueCategories.reduce((sum, [cat]) => sum + (agg[bucket]?.[cat] ?? 0), 0);
+    }
+
+    // 5. Build chart series: one per category
+    const colors = [
+        '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc', '#2fc25b', '#ffc658', '#8884d8'
+    ];
+    const series = uniqueCategories.map(([cat, name], idx) => ({
+        name: name,    // You can use cat here if you want codes instead
+        data: weightBuckets.map(bucket => {
+            const value = agg[bucket]?.[cat] ?? 0;
+            const total = totals[bucket] || 1;
+            return total > 0 ? value / total : 0; // as percent, 0..1
+        }),
+        color: colors[idx % colors.length]
+    }));
+
+    // 6. Format buckets for x-axis label, e.g. '0g', '100g', etc.
+    const categories = weightBuckets.map(b => `${b}g`);
+
+    return { categories, series };
+}
+
 
 
 export function generateChartData(

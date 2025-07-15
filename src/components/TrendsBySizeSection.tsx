@@ -1,65 +1,90 @@
+import { useMemo, useState } from 'react';
 import { Stack, Title, Text, Alert, Select, Loader, Box } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
-import { useState, useMemo } from 'react';
-import { useMortalityCategoryBySize } from '../hooks/lossMortality/useLossCategoryBySize';
 import { StackedBarChart } from 'aqc-charts';
+import { useMortalityCategoryBySize } from '../hooks/lossMortality/useLossCategoryBySize';
+import { generateSizeDistributionChartData } from '../utils/LossMortalityChartData';
 
 const bucketOptions = [
-  { value: '100', label: '100g' },
-  { value: '200', label: '200g' },
-  { value: '500', label: '500g' },
-  { value: '1000', label: '1 kg' },
-];
-
-// Decide which rates to show as series:
-const series = [
-  { key: 'rate', label: 'Tap (%)' },
-  { key: 'mortality_rate', label: 'Dødelighet (%)' },
-  { key: 'culling_rate', label: 'Utkasting (%)' },
+    { value: '100', label: '100g' },
+    { value: '200', label: '200g' },
+    { value: '500', label: '500g' },
+    { value: '1000', label: '1 kg' },
 ];
 
 export function TrendsBySizeSection() {
-  const [bucket, setBucket] = useState<string>('100');
-  const { data, loading, error } = useMortalityCategoryBySize(Number(bucket));
+    const [bucket, setBucket] = useState<string>('100');
+    const { data: rawData, loading, error } = useMortalityCategoryBySize(Number(bucket));
 
- console.log('TrendsBySizeSection data:', data);
-  
+    const chartData = useMemo(() => {
+        if (!rawData || rawData.length === 0) return { categories: [], series: [] };
+        return generateSizeDistributionChartData(rawData);
+    }, [rawData]);
 
 
-  return (
-    <Stack gap="lg">
-      <Title order={2}>Årsak / størrelse</Title>
-      <Alert color="blue" icon={<IconInfoCircle size="1rem" />}>
-        Her vises dødelighet etter størrelse. Velg ønsket vektgruppe og se fordelingen per kategori under.
-      </Alert>
+    // Build ECharts option for StackedBarChart
+    const option = useMemo(() => {
+        if (!chartData.categories.length || !chartData.series.length) return undefined;
+        return {
+            tooltip: { trigger: 'axis' },
+            legend: { top: 10 },
+            xAxis: { type: 'category', data: chartData.categories },
+            yAxis: { type: 'value', name: 'Prosent (%)' },
+            series: chartData.series.map(s => ({
+                name: s.name,
+                type: 'bar',
+                stack: 'total',
+                data: s.data,
+                itemStyle: { color: s.color }
+            })),
+        };
+    }, [chartData]);
 
-      <Select
-        label="Vektgruppe"
-        value={bucket}
-        onChange={(value) => value && setBucket(value)}
-        data={bucketOptions}
-        maw={200}
-      />
+    return (
+        <Stack gap="lg">
+            <Title order={2}>Årsak / størrelse</Title>
+            <Alert color="blue" icon={<IconInfoCircle size="1rem" />}>
+                Her vises dødelighet etter størrelse. Velg ønsket vektgruppe og se fordelingen per kategori under.
+            </Alert>
 
-      {loading && (
-        <Box><Loader size="sm" /></Box>
-      )}
+            <Select
+                label="Vektgruppe"
+                value={bucket}
+                onChange={value => value && setBucket(value)}
+                data={bucketOptions}
+                maw={200}
+            />
 
-      {error && (
-        <Alert color="red">{error}</Alert>
-      )}
+            {loading && (
+                <Box style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                    <Loader size="sm" />
+                </Box>
+            )}
 
-      {!loading && !error && (!data || data.length === 0) && (
-        <Text size="sm" c="dimmed">
-          Ingen data for valgt vektgruppe og filtere.
-        </Text>
-      )}
+            {error && (
+                <Alert color="red" title="Feil ved lasting av data">{String(error)}</Alert>
+            )}
 
-      {!loading && !error && data && data.length > 0 && (
-        <Box>
+            {!loading && !error && chartData.categories.length === 0 && (
+                <Alert color="yellow" icon={<IconInfoCircle size="1rem" />}>
+                    <Text size="sm">
+                        Ingen data tilgjengelig for valgt vektgruppe ({bucket}g).
+                    </Text>
+                </Alert>
+            )}
 
-        </Box>
-      )}
-    </Stack>
-  );
+            {!loading && !error && chartData.categories.length > 0 && (
+                <Box>
+                    <StackedBarChart
+                        data={chartData}
+                        height={400}
+                        showPercentage={true}
+                    />
+
+
+                </Box>
+            )}
+
+        </Stack>
+    );
 }
