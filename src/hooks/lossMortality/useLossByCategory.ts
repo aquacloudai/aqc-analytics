@@ -19,6 +19,7 @@ export function useMortalityCategoryRates(periodGrouping: string = 'month') {
   const weightRangeStart = useFilterStore((s) => s.weightRangeStart);
   const weightRangeEnd = useFilterStore((s) => s.weightRangeEnd);
   const includeSelf = useFilterStore((s) => s.include_self);
+  const selectedGeneration = useFilterStore((s) => s.selectedGeneration);
 
   const fromMonth = fromMonthRaw?.format('YYYY-MM');
   const toMonth = toMonthRaw?.format('YYYY-MM');
@@ -29,7 +30,9 @@ export function useMortalityCategoryRates(periodGrouping: string = 'month') {
     ...(fromMonth && { from_month: `${fromMonth}-01` }),
     ...(toMonth && { to_month: `${toMonth}-01` }),
     area: area || '%',
-    generation: generation || undefined,
+    generation: selectedGeneration && selectedGeneration.length > 0
+    ? selectedGeneration.join(',')
+    : undefined,
     weight_range_start: weightRangeStart,
     weight_range_end: weightRangeEnd,
     period_grouping: periodGrouping,

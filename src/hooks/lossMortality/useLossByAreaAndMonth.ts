@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { fetchLossByAreaAndMonth } from '../../api/lossMortality/fetchLossByAreaAndMonth';
 import type { LossMortalityByAreaAndMonthRecord, LossMortalityByAreaAndMonthParams, PaginationMeta, Meta } from '../../types/loss_mortality_by_area_and_month';
 import { isKeycloakReady } from '../../config/keycloak';
+import { useFilterStore } from '../../store/filterStore';
 
 type UseLossByAreaAndMonthParams = LossMortalityByAreaAndMonthParams;
 
@@ -11,6 +12,7 @@ export function useLossByAreaAndMonth(params: UseLossByAreaAndMonthParams = {}) 
   const [metadata, setMetadata] = useState<Meta | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const selectedGeneration = useFilterStore((s) => s.selectedGeneration);
 
   const fetchData = useCallback(async () => {
     if (!isKeycloakReady()) return;
@@ -33,6 +35,9 @@ export function useLossByAreaAndMonth(params: UseLossByAreaAndMonthParams = {}) 
     params.to_month,
     params.area,
     params.generation,
+    selectedGeneration && selectedGeneration.length > 0
+      ? selectedGeneration.join(',')
+      : undefined,
     params.weight_range_start,
     params.weight_range_end,
     params.offset,

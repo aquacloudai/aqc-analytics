@@ -20,9 +20,9 @@ import { FilterSidebar } from './FilterSidebar';
 import { useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import logo from '../assets/logo.png';
-import { useFarmer } from '../hooks/useFarmer';
+import { useFarmer } from '../hooks/auth/useFarmer';
 import { Select } from '@mantine/core';
-import { useAdminFarmers } from '../hooks/useAdminFarmers';
+import { useAdminFarmers } from '../hooks/auth/useAdminFarmers';
 import { useAdminFarmerStore } from '../store/adminFarmerStore';
 
 export function Layout() {

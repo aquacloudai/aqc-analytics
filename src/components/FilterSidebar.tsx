@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useFilterStore } from '../store/filterStore';
 import dayjs from 'dayjs';
 import {
+  Alert,
   Box,
   Paper,
   Title,
@@ -19,6 +20,7 @@ import {
   Transition,
   NumberInput,
   TextInput,
+  MultiSelect
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { MonthPickerInput } from '@mantine/dates';
@@ -32,6 +34,9 @@ import {
   IconChevronDown,
   IconChevronUp
 } from '@tabler/icons-react';
+
+import { useAquacloudAreas } from '../hooks/common/useAquacloudAreas';
+import { useGenerations } from '../hooks/common/useGenerations';
 
 interface FilterSidebarProps {
   isOpen: boolean;
@@ -48,12 +53,17 @@ export function FilterSidebar({
   const [dateFiltersOpen, setDateFiltersOpen] = useState(true);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
 
+  const { data: aquacloudAreas, loading: areasLoading, error: areasError } = useAquacloudAreas();
+
+  const { data: generations, loading: generationsLoading, error: generationsError } = useGenerations();
+
   // filter states
-  const selectedArea = useFilterStore((s) => s.selectedArea);
+  const selectedArea = useFilterStore((s) => s.selectedArea); // string[]
   const setSelectedArea = useFilterStore((s) => s.setSelectedArea);
 
-  const selectedGeneration = useFilterStore((s) => s.selectedGeneration);
+  const selectedGeneration = useFilterStore((s) => s.selectedGeneration); // string[]
   const setSelectedUtsett = useFilterStore((s) => s.setSelectedUtsett);
+
 
   const weightRangeStart = useFilterStore((s) => s.weightRangeStart);
   const setWeightRangeStart = useFilterStore((s) => s.setWeightRangeStart);
@@ -75,20 +85,20 @@ export function FilterSidebar({
   const isMobile = useMediaQuery('(max-width: 768px)');
 
 
+  const areaOptions = aquacloudAreas
+    ? aquacloudAreas.map(area => ({
+      value: String(area.area_id),
+      label: area.name,
+    }))
+    : [];
 
-  // Mock data for demonstration
-  const areas = [
-    'Norge', 'Sør-Norge', 'PO 2 & 3', 'PO 3 & 4', 'Midt-Norge', "PO 5",
-    'Nord-Norge', 'PO 5 & 6', 'PO 6', 'PO 7 & 8', 'PO 12 & 13', "PO 9, 10 & 11"
-  ];
+  const utsettOptions = generations
+    ? generations.map(generation => ({
+      value: String(generation.generation),
+      label: generation.generation_name,
+    }))
+    : [];
 
-  const utsettOptions = [
-    '2021 - Vår', '2021 - Høst',
-    '2022 - Vår', '2022 - Høst',
-    '2023 - Vår', '2023 - Høst',
-    '2024 - Vår', '2024 - Høst',
-    '2025 - Vår', '2025 - Høst'
-  ];
 
   const categories = ['Laks', 'Ørret'];
 
@@ -106,8 +116,8 @@ export function FilterSidebar({
   };
 
   const resetFilters = () => {
-    setSelectedArea(null);
-    setSelectedUtsett(null);
+    setSelectedArea('%');
+    setSelectedUtsett([]);
     setWeightRangeStart(0);
     setWeightRangeEnd(10000);
     setFromMonth(dayjs('2024-05-01'));
@@ -212,50 +222,50 @@ export function FilterSidebar({
         }}
       >
         {/* Toggle Button */}
-<Box
-  style={{
-    position: 'fixed',
-    top: '80px',
-    right: isOpen ? (isMobile ? '20px' : '390px') : '20px',
-    zIndex: 1001,
-  }}
->
-    <ActionIcon
-      onClick={onToggle}
-      variant="filled"
-      color="blue"
-      size="xl"
-      style={{
-        position: 'relative',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-        transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease',
-        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-      }}
-    >
-      {isOpen ? <IconX size={24} /> : <IconFilter size={24} />}
-    </ActionIcon>
+        <Box
+          style={{
+            position: 'fixed',
+            top: '80px',
+            right: isOpen ? (isMobile ? '20px' : '390px') : '20px',
+            zIndex: 1001,
+          }}
+        >
+          <ActionIcon
+            onClick={onToggle}
+            variant="filled"
+            color="blue"
+            size="xl"
+            style={{
+              position: 'relative',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease',
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          >
+            {isOpen ? <IconX size={24} /> : <IconFilter size={24} />}
+          </ActionIcon>
 
-    {activeFiltersCount > 0 && !isOpen && (
-      <Badge
-        size="xs"
-        color="red"
-        style={{
-          position: 'absolute',
-          top: -6,
-          right: -6,
-          zIndex: 1002,
-          minWidth: 18,
-          height: 18,
-          padding: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {activeFiltersCount}
-      </Badge>
-    )}
-  </Box>
+          {activeFiltersCount > 0 && !isOpen && (
+            <Badge
+              size="xs"
+              color="red"
+              style={{
+                position: 'absolute',
+                top: -6,
+                right: -6,
+                zIndex: 1002,
+                minWidth: 18,
+                height: 18,
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {activeFiltersCount}
+            </Badge>
+          )}
+        </Box>
 
 
         {/* Sidebar Content */}
@@ -310,25 +320,20 @@ export function FilterSidebar({
               <Divider />
 
               {/* Area Selection */}
+              {areasLoading && <Text size="xs" c="dimmed">Laster områder ...</Text>}
+              {areasError && <Alert color="red">{areasError}</Alert>}
+
               <Select
                 label="Område"
                 placeholder="Velg område"
-                data={areas}
-                value={selectedArea}
+                data={areaOptions}
+                value={selectedArea} // string | null
                 onChange={setSelectedArea}
                 clearable
                 searchable
-                styles={{
-                  input: {
-                    '&:focus': {
-                      borderColor: '#1976d2',
-                    }
-                  }
-                }}
               />
 
-              {/* Utsett Selection */}
-              <Select
+              <MultiSelect
                 label="Utsett"
                 placeholder="Velg utsett"
                 data={utsettOptions}
@@ -336,14 +341,9 @@ export function FilterSidebar({
                 onChange={setSelectedUtsett}
                 clearable
                 searchable
-                styles={{
-                  input: {
-                    '&:focus': {
-                      borderColor: '#1976d2',
-                    }
-                  }
-                }}
               />
+
+
 
               <Divider />
 

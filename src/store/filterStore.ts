@@ -5,7 +5,7 @@ interface FilterState {
   from_month: Dayjs | null;
   to_month: Dayjs | null;
   selectedArea: string | null;
-  selectedGeneration: string | null;
+  selectedGeneration: string[];
   weightRangeStart: number;
   weightRangeEnd: number;
   include_self: boolean;
@@ -19,7 +19,7 @@ interface FilterState {
   setFromMonth: (start: Dayjs | null) => void;
   setToMonth: (end: Dayjs | null) => void;
   setSelectedArea: (area: string | null) => void;
-  setSelectedUtsett: (utsett: string | null) => void;
+  setSelectedUtsett: (utsett: string[]) => void; 
   setWeightRangeStart: (value: number) => void;
   setWeightRangeEnd: (value: number) => void;
   setIncludeSelf: (show: boolean) => void;
@@ -28,11 +28,11 @@ interface FilterState {
   resetFilters: () => void;
 }
 
-const defaultState = {
+const defaultState: Omit<FilterState, 'setFromMonth'|'setToMonth'|'setSelectedArea'|'setSelectedUtsett'|'setWeightRangeStart'|'setWeightRangeEnd'|'setIncludeSelf'|'setSearchTerm'|'toggleCategory'|'resetFilters'|'triggerApplyFilters'> = {
   from_month: dayjs('2024-05-01'),
   to_month: dayjs(),
-  selectedArea: null,
-  selectedGeneration: null,
+  selectedArea: null,                 // <-- Default to []
+  selectedGeneration: [],           // <-- Default to []
   weightRangeStart: 0,
   weightRangeEnd: 10000,
   include_self: true,
@@ -44,11 +44,10 @@ const defaultState = {
 export const useFilterStore = create<FilterState>((set, get) => ({
   ...defaultState,
 
-
   setFromMonth: (start) => set({ from_month: start }),
   setToMonth: (end) => set({ to_month: end }),
-  setSelectedArea: (area) => set({ selectedArea: area }),
-  setSelectedUtsett: (generation) => set({ selectedGeneration: generation }),
+  setSelectedArea: (area) => set({ selectedArea: area }),              // <-- Full array!
+  setSelectedUtsett: (generation) => set({ selectedGeneration: generation }), // <-- Full array!
   setWeightRangeStart: (value) => set({ weightRangeStart: value }),
   setWeightRangeEnd: (value) => set({ weightRangeEnd: value }),
   setIncludeSelf: (show) => set({ include_self: show }),

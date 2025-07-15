@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchFarmer } from '../api/auth/fetchFarmer';
-import type { Farmer } from '../types/farmer';
+import { fetchFarmer } from '../../api/auth/fetchFarmer';
+import type { Farmer } from '../../types/farmer';
 
 export function useFarmer() {
   const [data, setData] = useState<Farmer | null>(null);

@@ -10,8 +10,8 @@ let keycloakReady = false;
 let initPromise: Promise<boolean> | null = null;
 
 export const initKeycloak = async (): Promise<boolean> => {
-  if (keycloakReady) return true; // ✅ already initialized
-  if (initPromise) return initPromise; // ✅ currently initializing
+  if (keycloakReady) return true; 
+  if (initPromise) return initPromise;
 
   initPromise = keycloak.init({
     onLoad: 'login-required',

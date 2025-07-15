@@ -1,5 +1,5 @@
-import { useAuthStore } from '../store/authStore';
-import { useAdminFarmerStore } from '../store/adminFarmerStore';
+import { useAuthStore } from '../../store/authStore';
+import { useAdminFarmerStore } from '../../store/adminFarmerStore';
 
 export function useEffectiveFarmerGroupKey() {
   const { user } = useAuthStore();
