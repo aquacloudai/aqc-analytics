@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Stack, Title, Text, Alert, Select, Loader, Box } from '@mantine/core';
-import { IconInfoCircle } from '@tabler/icons-react';
+import {
+    Stack, Title, Text, Alert, Select, Loader, Box,
+    Card, Switch, Group, Tooltip, ActionIcon
+} from '@mantine/core';
+import { IconInfoCircle, IconSettings, IconRefresh } from '@tabler/icons-react';
 import { StackedBarChart } from 'aqc-charts';
 import { useMortalityCategoryBySize } from '../hooks/lossMortality/useLossCategoryBySize';
 import { generateSizeDistributionChartData } from '../utils/LossMortalityChartData';
@@ -14,31 +17,16 @@ const bucketOptions = [
 
 export function TrendsBySizeSection() {
     const [bucket, setBucket] = useState<string>('100');
-    const { data: rawData, loading, error } = useMortalityCategoryBySize(Number(bucket));
+    const [showPercentage, setShowPercentage] = useState(true);
+    const [showValues, setShowValues] = useState(false);
+    const [showHorizontal, setShowHorizontal] = useState(false);
+
+    const { data: rawData, loading, error, refetch } = useMortalityCategoryBySize(Number(bucket));
 
     const chartData = useMemo(() => {
         if (!rawData || rawData.length === 0) return { categories: [], series: [] };
         return generateSizeDistributionChartData(rawData);
     }, [rawData]);
-
-
-    // Build ECharts option for StackedBarChart
-    const option = useMemo(() => {
-        if (!chartData.categories.length || !chartData.series.length) return undefined;
-        return {
-            tooltip: { trigger: 'axis' },
-            legend: { top: 10 },
-            xAxis: { type: 'category', data: chartData.categories },
-            yAxis: { type: 'value', name: 'Prosent (%)' },
-            series: chartData.series.map(s => ({
-                name: s.name,
-                type: 'bar',
-                stack: 'total',
-                data: s.data,
-                itemStyle: { color: s.color }
-            })),
-        };
-    }, [chartData]);
 
     return (
         <Stack gap="lg">
@@ -47,13 +35,50 @@ export function TrendsBySizeSection() {
                 Her vises dødelighet etter størrelse. Velg ønsket vektgruppe og se fordelingen per kategori under.
             </Alert>
 
-            <Select
-                label="Vektgruppe"
-                value={bucket}
-                onChange={value => value && setBucket(value)}
-                data={bucketOptions}
-                maw={200}
-            />
+            {/* Diagram Innstillinger Card */}
+            <Card shadow="sm" p="md">
+                <Group justify="space-between" align="center">
+                    <Group>
+                        <IconSettings size="1.2rem" />
+                        <Text size="lg" fw={600}>Diagram Innstillinger</Text>
+                    </Group>
+                    <Group>
+                        <Tooltip label="Oppdater data">
+                            <ActionIcon variant="light" onClick={refetch} loading={loading}>
+                                <IconRefresh size="1rem" />
+                            </ActionIcon>
+                        </Tooltip>
+                    </Group>
+                </Group>
+                <Group mt="md" gap="md" align="flex-end" wrap="wrap">
+                    <Select
+                        label="Vektgruppe"
+                        value={bucket}
+                        onChange={value => value && setBucket(value)}
+                        data={bucketOptions}
+                        maw={120}
+                        size="sm"
+                    />
+                    <Switch
+                        label="Vis som prosent"
+                        checked={showPercentage}
+                        onChange={e => setShowPercentage(e.currentTarget.checked)}
+                        size="sm"
+                    />
+                    <Switch
+                        label="Vis verdier"
+                        checked={showValues}
+                        onChange={e => setShowValues(e.currentTarget.checked)}
+                        size="sm"
+                    />
+                    <Switch
+                        label="Horisontal"
+                        checked={showHorizontal}
+                        onChange={e => setShowHorizontal(e.currentTarget.checked)}
+                        size="sm"
+                    />
+                </Group>
+            </Card>
 
             {loading && (
                 <Box style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
@@ -78,13 +103,12 @@ export function TrendsBySizeSection() {
                     <StackedBarChart
                         data={chartData}
                         height={400}
-                        showPercentage={true}
+                        showPercentage={showPercentage}
+                        showValues={showValues}
+                        horizontal={showHorizontal}
                     />
-
-
                 </Box>
             )}
-
         </Stack>
     );
 }
